@@ -4,6 +4,8 @@
   const STATUSES = ['expired', 'upcoming', 'pending', 'valid'];
   const STYLE_ID = 'safetrack-kpi-hotfix-style';
   const ACTIVE_KEY = 'st-dashboard-status-hotfix';
+  const SELF_TEST = new URLSearchParams(location.search).get('selftest') === 'kpi' || location.hash === '#selftest-kpi';
+  let selfTestStarted = false;
 
   function addStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -69,6 +71,58 @@
         }
       });
     });
+
+    if (SELF_TEST && !selfTestStarted) {
+      selfTestStarted = true;
+      setTimeout(runSelfTest, 50);
+    }
+  }
+
+  function waitFor(selector, timeout = 4000) {
+    return new Promise((resolve, reject) => {
+      const started = performance.now();
+      const check = () => {
+        const element = document.querySelector(selector);
+        if (element) return resolve(element);
+        if (performance.now() - started > timeout) return reject(new Error(`Timeout: ${selector}`));
+        requestAnimationFrame(check);
+      };
+      check();
+    });
+  }
+
+  async function runSelfTest() {
+    const results = [];
+    try {
+      for (const status of STATUSES) {
+        if (!document.querySelector(`[data-kpi-status="${status}"]`)) {
+          document.querySelector('[data-page="dashboard"]')?.click();
+          await waitFor(`[data-kpi-status="${status}"]`);
+        }
+        const card = document.querySelector(`[data-kpi-status="${status}"]`);
+        const expected = Number(card.querySelector('.kpi-value')?.textContent.trim() || NaN);
+        card.click();
+        const select = await waitFor('#filter-status');
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const count = document.querySelectorAll('tbody tr').length;
+        const selected = select.value;
+        results.push({ status, expected, count, selected, passed: expected === count && selected === status });
+        document.querySelector('[data-page="dashboard"]')?.click();
+        await waitFor(`[data-kpi-status="${status}"]`);
+      }
+      const report = {
+        test: 'SafeTrack deployed dashboard KPI smoke test',
+        passed: results.every(result => result.passed),
+        url: location.href,
+        timestamp: new Date().toISOString(),
+        results
+      };
+      observer.disconnect();
+      document.body.innerHTML = `<main style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px;max-width:900px;margin:auto"><h1>${report.passed ? 'PASS' : 'FAIL'}</h1><p>SafeTrack deployed dashboard KPI smoke test</p><pre id="safetrack-selftest-result" style="white-space:pre-wrap;background:#f4f7fb;border:1px solid #d0d5dd;border-radius:12px;padding:16px">${JSON.stringify(report, null, 2)}</pre></main>`;
+    } catch (error) {
+      observer.disconnect();
+      document.body.innerHTML = `<main style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px;max-width:900px;margin:auto"><h1>FAIL</h1><pre id="safetrack-selftest-result">${JSON.stringify({ passed: false, error: String(error), url: location.href }, null, 2)}</pre></main>`;
+    }
   }
 
   const observer = new MutationObserver(apply);
