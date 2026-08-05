@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="safetrack-loader-build" content="2026-08-06-kpi-hotfix-1">
 <title>SafeTrack wird geladen</title>
 <style>
 html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f7fb;color:#101828}
@@ -18,10 +19,7 @@ p{color:#667085}
 <script>
 (async()=>{
   try{
-    const files=[
-      'payload/part00.txt','payload/part01.txt','payload/part02.txt',
-      'payload/part03.txt','payload/part04.txt','payload/part05.txt','payload/part06.txt'
-    ];
+    const files=['payload/part00.txt','payload/part01.txt','payload/part02.txt','payload/part03.txt','payload/part04.txt','payload/part05.txt','payload/part06.txt'];
     const parts=await Promise.all(files.map(async f=>{
       const r=await fetch(f,{cache:'no-store'});
       if(!r.ok) throw new Error(`${f}: ${r.status}`);
@@ -34,8 +32,9 @@ p{color:#667085}
     if(!('DecompressionStream' in window)) throw new Error('Dieser Browser unterstützt die benötigte GZIP-Dekomprimierung nicht.');
     const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     const html=await new Response(stream).text();
+    const patchedHtml=html.replace('</body>','<script src="kpi-hotfix.js?v=20260806-1"><\/script></body>');
     document.open();
-    document.write(html);
+    document.write(patchedHtml);
     document.close();
   }catch(e){
     document.getElementById('status').textContent='Die Anwendung konnte nicht geladen werden.';
