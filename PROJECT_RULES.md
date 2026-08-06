@@ -57,6 +57,11 @@
 35. Deployment and validation must remain separable. A validation failure must not silently replace the last known working release.
 36. Every non-dashboard menu, detail view, modal workflow and print-options view must provide a visible back action that returns to the immediately preceding application state rather than always jumping to the dashboard.
 37. Back navigation must be tested across at least three consecutive states and in both desktop and mobile layouts.
+38. The employee hierarchy must follow the exact order organizational area → assigned `Tätigkeit` group → employee. Expanding an organizational area must never show training content directly.
+39. The employee page must provide live search by employee name and full or partial personnel number. Matching hierarchy levels must open automatically, and an explicit no-results state is mandatory.
+40. Employee names and personnel numbers must be visually separated; a personnel number must never be concatenated directly to the employee name.
+41. Every training must have one stable unique identifier in the `ST-UW-NNN` format. Editing the title, version, language content or assignment must not change that identifier, and duplicating or creating a training must allocate a new identifier.
+42. The stable training identifier must be visible in the catalog, training editor, employee profile, saved records, complete printed training and every confirmation/Bestätigung page. A visible print preview must allow this identifier to be verified before system printing.
 
 ## Mandatory error-learning protocol
 
