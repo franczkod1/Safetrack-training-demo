@@ -3,3 +3,4 @@ Publication method: GitHub Pages from gh-pages branch
 Source branch: main
 Source merge commit: e43fc7fe152cbc85883b0dc5b94bd06e1ef61a21
 Published branch prepared: 2026-08-06T21:59:00+02:00
+Manual Pages trigger
