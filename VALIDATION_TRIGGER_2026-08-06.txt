@@ -1,0 +1,2 @@
+Final validation trigger after balanced status fixture and CI rebase fixes.
+Timestamp: 2026-08-06T13:59:00+02:00
