@@ -39,6 +39,11 @@
 28. One user interaction domain may have only one active implementation module. Layered override modules for the same employee, category, selection or print behavior are prohibited.
 29. Confirmation-page layout must use compact normal document flow. Fixed physical page heights, flexible spacer rows and bottom-pushing signature layouts are prohibited.
 30. Chromium PDF page counts are necessary but not sufficient for iOS printing; confirmation pagination requires a final iPhone/Safari print-preview acceptance check.
+31. The user-visible SafeTrack version number may increase only when a new user-visible function or materially changed user workflow is introduced.
+32. Bug fixes, deployment repairs, workflow changes, refactoring, cache invalidation, diagnostics and test improvements must keep the current SafeTrack version number.
+33. Technical releases must be distinguished with the Git commit SHA, build identifier or cache token instead of a new SafeTrack product version.
+34. The GitHub Pages deployment workflow must remain minimal and independent from browser, PDF and regression validation.
+35. Validation failures may be reported by a separate workflow, but they must not prevent an otherwise valid static Pages artifact from being deployed unless the user explicitly approves gating deployment again.
 
 ## Mandatory error-learning protocol
 
