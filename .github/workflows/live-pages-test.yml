@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - LIVE_TEST_RESULT.json
       - LIVE_TEST_SCREENSHOT.png
+      - STATIC_VALIDATION_RESULT.txt
   workflow_dispatch:
 
 permissions:
@@ -25,15 +26,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Remove previous test artifacts
+        run: rm -f LIVE_TEST_RESULT.json LIVE_TEST_SCREENSHOT.png STATIC_VALIDATION_RESULT.txt
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Validate direct static source files
-        run: node .github/scripts/validate-static.mjs
+        id: static
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          node .github/scripts/validate-static.mjs > STATIC_VALIDATION_RESULT.txt 2>&1
+          status=$?
+          cat STATIC_VALIDATION_RESULT.txt
+          exit $status
 
       - name: Wait for the exact GitHub Pages files
+        id: deploy
+        if: steps.static.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -79,6 +94,7 @@ jobs:
           exit 1
 
       - name: Install browser test tools
+        if: steps.static.outcome == 'success' && steps.deploy.outcome == 'success'
         run: |
           npm init -y
           npm install playwright@1.55.0
@@ -86,16 +102,48 @@ jobs:
 
       - name: Test the deployed GitHub Pages site
         id: smoke
+        if: steps.static.outcome == 'success' && steps.deploy.outcome == 'success'
         continue-on-error: true
         run: node .github/scripts/live-test.mjs
 
-      - name: Save public test result
+      - name: Create fallback result for an early failure
+        if: always()
+        env:
+          STATIC_OUTCOME: ${{ steps.static.outcome }}
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          TEST_COMMIT: ${{ github.sha }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          if (!fs.existsSync('LIVE_TEST_RESULT.json')) {
+            const staticLog = fs.existsSync('STATIC_VALIDATION_RESULT.txt')
+              ? fs.readFileSync('STATIC_VALIDATION_RESULT.txt', 'utf8')
+              : '';
+            const result = {
+              testedAt: new Date().toISOString(),
+              commit: process.env.TEST_COMMIT,
+              url: `https://franczkod1.github.io/Safetrack-training-demo/?live-test=${process.env.TEST_COMMIT}`,
+              expectedBuild: 'direct-static-v6',
+              passed: false,
+              checks: {
+                staticValidationOutcome: process.env.STATIC_OUTCOME || 'not-run',
+                deploymentOutcome: process.env.DEPLOY_OUTCOME || 'not-run',
+                browserTestOutcome: process.env.SMOKE_OUTCOME || 'not-run'
+              },
+              errors: [staticLog.trim() || 'The workflow stopped before the browser test produced a result.']
+            };
+            fs.writeFileSync('LIVE_TEST_RESULT.json', `${JSON.stringify(result, null, 2)}\n`);
+          }
+          NODE
+
+      - name: Save public test result and diagnostics
         if: always()
         run: |
           git pull --rebase
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add LIVE_TEST_RESULT.json
+          git add LIVE_TEST_RESULT.json STATIC_VALIDATION_RESULT.txt
           if [ -f LIVE_TEST_SCREENSHOT.png ]; then git add LIVE_TEST_SCREENSHOT.png; fi
           git commit -m "Record SafeTrack direct static live test [skip ci]" || exit 0
           git push
