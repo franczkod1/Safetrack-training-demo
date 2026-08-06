@@ -9,6 +9,10 @@
   const OFFSETS = [-18, -4, 2, 4, 9, 17, 28, 48, 75, 110, 160, 240];
   const RANK = { critical: 0, soon: 1, valid: 2 };
   const LABEL = { critical: 'Kritisch', soon: 'In 6–30 Tagen fällig', valid: 'Gültig' };
+  const LANGUAGE_NAME = {
+    de: 'Deutsch', pl: 'Polski', ru: 'Русский', ar: 'العربية',
+    tr: 'Türkçe', hu: 'Magyar', ro: 'Română'
+  };
 
   let currentEmployeeId = '';
   let selected = new Set();
@@ -18,20 +22,17 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[character]);
-
   const today = () => new Date(new Date().setHours(0, 0, 0, 0));
-  const addDays = days => {
-    const date = new Date(today().getTime() + days * 864e5);
-    return date.toISOString().slice(0, 10);
-  };
+  const addDays = days => new Date(today().getTime() + days * 864e5).toISOString().slice(0, 10);
   const dateLabel = value => new Intl.DateTimeFormat(api.state.lang || 'de', { dateStyle: 'medium' })
     .format(new Date(`${value}T12:00:00`));
   const classify = days => days <= 5 ? 'critical' : days <= 30 ? 'soon' : 'valid';
   const required = (employee, training) => training.active !== false && Array.isArray(training.roles) &&
     training.roles.some(role => role === 'all' || role === employee[4]);
-  const categoryName = category => seed.categories?.[category]?.[api.state.lang] ||
-    seed.categories?.[category]?.de || category;
-  const trainingTitle = training => training.title?.[api.state.lang] || training.title?.de || training.id;
+  const categoryName = (category, language = api.state.lang || 'de') =>
+    seed.categories?.[category]?.[language] || seed.categories?.[category]?.de || category;
+  const trainingTitle = (training, language = api.state.lang || 'de') =>
+    training.title?.[language] || training.title?.de || training.id;
 
   function readRecords() {
     try {
@@ -47,17 +48,10 @@
     const employee = seed.employees[employeeIndex];
     if (!employee) return [];
     const records = readRecords();
-    const catalog = api.catalog;
-    return catalog.filter(training => required(employee, training)).map((training, trainingIndex) => {
+    return api.catalog.filter(training => required(employee, training)).map((training, trainingIndex) => {
       const record = records.find(item => item.employeeId === employee[1] && item.trainingId === training.id);
       const dueDays = record ? training.months * 30 : OFFSETS[(employeeIndex * 7 + trainingIndex * 5) % OFFSETS.length];
-      return {
-        training,
-        dueDays,
-        dueDate: addDays(dueDays),
-        status: classify(dueDays),
-        record
-      };
+      return { training, dueDays, dueDate: addDays(dueDays), status: classify(dueDays), record };
     });
   }
 
@@ -143,11 +137,11 @@
 
     const groups = groupsFor(employeeId);
     const allItems = groups.flatMap(group => group.items);
-    const overall = overallStatus(allItems);
     body.innerHTML = `<div class="st-employee-actions">
-      <div class="st-employee-status">${statusMarkup(overall)}<span>${allItems.length} zugeordnete Unterweisungen</span></div>
+      <div class="st-employee-status">${statusMarkup(overallStatus(allItems))}<span>${allItems.length} zugeordnete Unterweisungen</span></div>
       <div class="st-quick-actions">
         <button type="button" class="btn small" data-st-action="select-critical">Alle kritischen auswählen</button>
+        <button type="button" class="btn small" data-st-action="select-soon">Alle in 6–30 Tagen fälligen auswählen</button>
         <button type="button" class="btn small" data-st-action="clear">Auswahl aufheben</button>
       </div>
     </div>
@@ -196,18 +190,14 @@
   }
 
   function selectedAssignments() {
-    const order = groupsFor(currentEmployeeId).flatMap(group => group.items);
-    return order.filter(item => selected.has(item.training.id));
+    return groupsFor(currentEmployeeId).flatMap(group => group.items)
+      .filter(item => selected.has(item.training.id));
   }
 
   function startBatch() {
     const items = selectedAssignments();
     if (!items.length) return showToast('Mindestens eine Unterweisung auswählen');
-    batch = {
-      employeeId: currentEmployeeId,
-      ids: items.map(item => item.training.id),
-      index: 0
-    };
+    batch = { employeeId: currentEmployeeId, ids: items.map(item => item.training.id), index: 0 };
     openBatchItem();
   }
 
@@ -225,39 +215,128 @@
     api.render();
   }
 
-  function printSelection() {
+  function closePrintOptions() {
+    document.querySelector('.st-print-options-bg')?.remove();
+  }
+
+  function openPrintOptions() {
+    if (!selectedAssignments().length) return showToast('Mindestens eine Unterweisung auswählen');
+    closePrintOptions();
+    const overlay = document.createElement('div');
+    overlay.className = 'st-print-options-bg';
+    overlay.innerHTML = `<section class="st-print-options" role="dialog" aria-modal="true" aria-labelledby="st-print-options-title">
+      <div class="st-print-options-head">
+        <div><h3 id="st-print-options-title">Druckumfang auswählen</h3><p>${selected.size} Unterweisung(en) ausgewählt</p></div>
+        <button type="button" class="close" data-st-action="close-print-options">Schließen</button>
+      </div>
+      <div class="st-print-option-grid">
+        <button type="button" class="st-print-option" data-st-print-mode="confirmation">
+          <strong>Nur Bestätigung und Unterschriften</strong>
+          <span>Je Unterweisung eine eigene A4-Seite mit zwei getrennten Unterschriften.</span>
+        </button>
+        <button type="button" class="st-print-option" data-st-print-mode="full">
+          <strong>Unterweisung mit Bestätigungsseite</strong>
+          <span>Vollständiger Inhalt in der Sprache der beschäftigten Person, deutsche Referenz und separate Bestätigungsseite.</span>
+        </button>
+      </div>
+    </section>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('[data-st-print-mode]')?.focus();
+  }
+
+  function signatureMarkup() {
+    return `<section class="st-print-signatures">
+      <div class="st-signature-block"><span>Datum</span><div class="st-signature-line"></div></div>
+      <div class="st-signature-block"><span>Name der unterweisenden / beaufsichtigenden Person</span><div class="st-signature-line"></div></div>
+      <div class="st-signature-block"><span>Unterschrift Mitarbeitende:r</span><div class="st-signature-line"></div></div>
+      <div class="st-signature-block"><span>Unterschrift unterweisende / beaufsichtigende Person</span><div class="st-signature-line"></div></div>
+    </section>`;
+  }
+
+  function employeeHeader(employee, item) {
+    return `<header class="st-print-header">
+      <div><h1>${escapeHtml(trainingTitle(item.training, 'de'))}</h1><p>${escapeHtml(categoryName(item.training.category, 'de'))}</p></div>
+      <dl>
+        <div><dt>Mitarbeitende Person</dt><dd>${escapeHtml(employee[0])}</dd></div>
+        <div><dt>Personalnummer</dt><dd>${escapeHtml(employee[1])}</dd></div>
+        <div><dt>Bereich / Tätigkeit</dt><dd>${escapeHtml(employee[2])} · ${escapeHtml(employee[3])}</dd></div>
+        <div><dt>Version</dt><dd>v${escapeHtml(item.training.version)}</dd></div>
+        <div><dt>Fällig</dt><dd>${dateLabel(item.dueDate)}</dd></div>
+        <div><dt>Status</dt><dd>${LABEL[item.status]}</dd></div>
+      </dl>
+    </header>`;
+  }
+
+  function confirmationMarkup(employee, item) {
+    const employeeLanguage = employee[5] || 'de';
+    const employeeTitle = trainingTitle(item.training, employeeLanguage);
+    return `<section class="st-print-confirmation-page">
+      ${employeeHeader(employee, item)}
+      <div class="st-confirmation-copy" dir="${employeeLanguage === 'ar' ? 'rtl' : 'ltr'}">
+        <h2>Bestätigung der Unterweisung</h2>
+        <p>Ich bestätige, dass ich die Unterweisung „${escapeHtml(employeeTitle)}“ erhalten, verstanden und Gelegenheit für Rückfragen hatte.</p>
+        ${employeeLanguage === 'de' ? '' : `<p class="st-german-reference"><strong>Deutsche Referenz:</strong> Ich bestätige, dass die Unterweisung vollständig durchgeführt und Verständnisfragen geklärt wurden.</p>`}
+      </div>
+      ${signatureMarkup()}
+    </section>`;
+  }
+
+  function slideMarkup(slide) {
+    if (!Array.isArray(slide)) return '';
+    const [heading, points] = slide;
+    return `<section class="st-print-slide"><h3>${escapeHtml(heading)}</h3><ul>${(Array.isArray(points) ? points : []).map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul></section>`;
+  }
+
+  function questionsMarkup(training, language) {
+    const questions = training.questions?.[language] || [];
+    if (!Array.isArray(questions) || !questions.length) return '';
+    return `<section class="st-print-questions"><h3>Wissensfragen</h3>${questions.map((question, index) => `<div class="st-print-question">
+      <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+      <ul>${(question.o || []).map(option => `<li>□ ${escapeHtml(option)}</li>`).join('')}</ul>
+    </div>`).join('')}</section>`;
+  }
+
+  function languageContent(training, language, heading) {
+    const description = training.description?.[language] || training.description?.de || '';
+    const slides = training.slides?.[language] || training.slides?.de || [];
+    return `<section class="st-print-language" dir="${language === 'ar' ? 'rtl' : 'ltr'}">
+      <h2>${escapeHtml(heading)}</h2>
+      <h3>${escapeHtml(trainingTitle(training, language))}</h3>
+      <p>${escapeHtml(description)}</p>
+      ${slides.map(slideMarkup).join('')}
+      ${questionsMarkup(training, language)}
+    </section>`;
+  }
+
+  function fullTrainingMarkup(employee, item) {
+    const language = employee[5] || 'de';
+    const employeeContent = languageContent(item.training, language, `Unterweisung · ${LANGUAGE_NAME[language] || language.toUpperCase()}`);
+    const germanContent = language === 'de' ? '' : languageContent(item.training, 'de', 'Deutsche Fassung für die unterweisende Person');
+    return `<section class="st-print-training-content">
+      ${employeeHeader(employee, item)}
+      ${employeeContent}
+      ${germanContent}
+    </section>`;
+  }
+
+  function printSelection(mode) {
     const employee = seed.employees.find(item => item[1] === currentEmployeeId);
     const items = selectedAssignments();
     if (!employee || !items.length) return showToast('Mindestens eine Unterweisung auswählen');
+    if (!['confirmation', 'full'].includes(mode)) return openPrintOptions();
 
-    const grouped = new Map();
-    items.forEach(item => {
-      const category = item.training.category;
-      if (!grouped.has(category)) grouped.set(category, []);
-      grouped.get(category).push(item);
-    });
-
+    closePrintOptions();
     document.querySelector('#st-print-sheet')?.remove();
     const sheet = document.createElement('section');
     sheet.id = 'st-print-sheet';
-    sheet.innerHTML = `<header>
-      <h1>SafeTrack – Unterweisungsauswahl</h1>
-      <p><strong>${escapeHtml(employee[0])}</strong> · ${escapeHtml(employee[1])}</p>
-      <p>${escapeHtml(employee[2])} · ${escapeHtml(employee[3])}</p>
-    </header>
-    ${[...grouped.entries()].map(([category, categoryItems]) => `<section class="st-print-category">
-      <h2>${escapeHtml(categoryName(category))}</h2>
-      <table><thead><tr><th>Unterweisung</th><th>Version</th><th>Fällig</th><th>Status</th></tr></thead><tbody>
-      ${categoryItems.map(item => `<tr><td>${escapeHtml(trainingTitle(item.training))}</td><td>v${escapeHtml(item.training.version)}</td><td>${dateLabel(item.dueDate)}</td><td>${LABEL[item.status]}</td></tr>`).join('')}
-      </tbody></table>
-    </section>`).join('')}
-    <footer>
-      <div>Unterweisende Person: ______________________________</div>
-      <div>Datum: ____________________</div>
-      <div class="st-print-signature">Unterschrift Mitarbeitende:r</div>
-    </footer>`;
+    sheet.dataset.printMode = mode;
+    sheet.innerHTML = items.map(item => `<article class="st-print-document" data-training-id="${escapeHtml(item.training.id)}">
+      ${mode === 'full' ? fullTrainingMarkup(employee, item) : ''}
+      ${confirmationMarkup(employee, item)}
+    </article>`).join('');
     document.body.appendChild(sheet);
     document.body.classList.add('st-printing');
+
     const cleanup = () => {
       document.body.classList.remove('st-printing');
       sheet.remove();
@@ -285,16 +364,25 @@
   });
 
   document.addEventListener('click', event => {
+    const printMode = event.target.closest?.('[data-st-print-mode]');
+    if (printMode) {
+      printSelection(printMode.dataset.stPrintMode);
+      return;
+    }
+
     const action = event.target.closest?.('[data-st-action]');
     if (!action) return;
     const name = action.dataset.stAction;
     if (name === 'toggle-category') {
-      const body = document.querySelector(`#${CSS.escape(action.getAttribute('aria-controls'))}`);
+      const bodyId = action.getAttribute('aria-controls');
+      const body = bodyId ? document.getElementById(bodyId) : null;
       const expanded = action.getAttribute('aria-expanded') === 'true';
       action.setAttribute('aria-expanded', String(!expanded));
-      if (body) body.hidden = !expanded;
-    } else if (name === 'select-critical') {
-      assignments(currentEmployeeId).filter(item => item.status === 'critical').forEach(item => selected.add(item.training.id));
+      if (body) body.hidden = expanded;
+    } else if (name === 'select-critical' || name === 'select-soon') {
+      const status = name === 'select-critical' ? 'critical' : 'soon';
+      assignments(currentEmployeeId).filter(item => item.status === status)
+        .forEach(item => selected.add(item.training.id));
       syncSelectionUi();
     } else if (name === 'clear') {
       selected.clear();
@@ -302,7 +390,9 @@
     } else if (name === 'start') {
       startBatch();
     } else if (name === 'print') {
-      printSelection();
+      openPrintOptions();
+    } else if (name === 'close-print-options') {
+      closePrintOptions();
     }
   });
 
@@ -311,8 +401,7 @@
     if (!saveButton || !batch) return;
     const before = readRecords().length;
     setTimeout(() => {
-      const completed = readRecords().length > before;
-      if (!completed) return;
+      if (readRecords().length <= before) return;
       selected.delete(batch.ids[batch.index]);
       batch.index += 1;
       openBatchItem();
@@ -324,16 +413,23 @@
     if (closeButton && batch && api.state.m?.t === 'session') batch = null;
   }, true);
 
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.querySelector('.st-print-options-bg')) closePrintOptions();
+  });
+
   const observer = new MutationObserver(enhanceEmployeeModal);
   observer.observe(document.documentElement, { childList: true, subtree: true });
   enhanceEmployeeModal();
 
   window.__SafeTrackEmployeeGroups = {
     groupsFor,
+    assignments,
     getSelected: () => [...selected],
     select(ids) {
       selected = new Set(ids);
       syncSelectionUi();
-    }
+    },
+    printSelection,
+    openPrintOptions
   };
 })();
