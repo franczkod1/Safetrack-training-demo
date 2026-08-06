@@ -32,6 +32,8 @@ jobs:
         run: |
           set -o pipefail
           node .github/scripts/validate-static-v11.mjs 2>&1 | tee STATIC_VALIDATION_RESULT.txt
+          grep -q 'direct-static-v13' index.html
+          grep -q 'SafeTrack v13' safetrack-v13.js
 
       - name: Build exact GitHub Pages artifact
         run: |
@@ -42,6 +44,7 @@ jobs:
             index.html
             styles.css
             employee-training-groups.css
+            safetrack-v13.css
             seed-base.js
             trainings-a.js
             trainings-b.js
@@ -49,7 +52,7 @@ jobs:
             status-fixture.js
             app.js
             employee-training-groups.js
-            safetrack-release-v12.js
+            safetrack-v13.js
           )
           for file in "${files[@]}"; do
             test -s "${file}"
