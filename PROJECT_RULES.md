@@ -28,6 +28,10 @@
 17. Employee training profiles must derive their groups exclusively from the categories already defined in the Unterweisungen catalog; a second independent category system is prohibited.
 18. Employee-profile categories and their trainings must be sorted by worst status first, then by the earliest due date.
 19. Category-level selection must expose checked, unchecked and mixed states and must be verified together with individual multi-selection, batch start and print output.
+20. Every selected training must produce its own independent confirmation document with a separate employee signature and a separate instructor/supervisor signature.
+21. Printing must offer both confirmation-only output and full training content followed by a separate confirmation page.
+22. Critical and 6–30-day trainings must have separate bulk-selection controls, and each control must be verified to select only its own status.
+23. A category toggle must synchronize `aria-expanded` and the controlled element's `hidden` state on the first activation.
 
 ## Mandatory error-learning protocol
 
