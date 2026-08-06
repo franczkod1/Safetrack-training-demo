@@ -49,6 +49,7 @@ jobs:
             status-fixture.js
             app.js
             employee-training-groups.js
+            safetrack-release-v12.js
           )
           for file in "${files[@]}"; do
             test -s "${file}"
