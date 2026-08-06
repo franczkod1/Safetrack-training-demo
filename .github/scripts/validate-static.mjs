@@ -8,6 +8,7 @@ const requiredFiles = [
   'trainings-a.js',
   'trainings-b.js',
   'data-final.js',
+  'status-fixture.js',
   'app.js'
 ];
 
@@ -31,7 +32,14 @@ for (const file of requiredFiles) {
 
 const index = await readFile('index.html', 'utf8');
 const styles = await readFile('styles.css', 'utf8');
-const scriptNames = ['seed-base.js', 'trainings-a.js', 'trainings-b.js', 'data-final.js', 'app.js'];
+const scriptNames = [
+  'seed-base.js',
+  'trainings-a.js',
+  'trainings-b.js',
+  'data-final.js',
+  'status-fixture.js',
+  'app.js'
+];
 const scripts = Object.fromEntries(
   await Promise.all(scriptNames.map(async file => [file, await readFile(file, 'utf8')]))
 );
@@ -40,13 +48,14 @@ for (const reference of ['styles.css', ...scriptNames]) {
   assert(index.includes(reference), `index.html references ${reference}`);
 }
 
-const orderedReferences = ['seed-base.js', 'trainings-a.js', 'trainings-b.js', 'data-final.js', 'app.js'];
 let previousIndex = -1;
-for (const reference of orderedReferences) {
+for (const reference of scriptNames) {
   const currentIndex = index.indexOf(reference);
   assert(currentIndex > previousIndex, `${reference} is loaded in the required order`);
   previousIndex = currentIndex;
 }
+
+assert(index.includes('direct-static-v7'), 'index.html contains the direct-static-v7 build marker');
 
 const publicSource = [index, styles, ...Object.values(scripts)].join('\n');
 const forbiddenTokens = [
@@ -67,8 +76,37 @@ for (const [file, source] of Object.entries(scripts)) {
   report.checks.push(`${file} has valid JavaScript syntax`);
 }
 
-const context = vm.createContext({ window: {} });
-for (const file of ['seed-base.js', 'trainings-a.js', 'trainings-b.js', 'data-final.js']) {
+const storage = new Map();
+const localStorage = {
+  getItem(key) {
+    return storage.has(key) ? storage.get(key) : null;
+  },
+  setItem(key, value) {
+    storage.set(key, String(value));
+  },
+  removeItem(key) {
+    storage.delete(key);
+  },
+  clear() {
+    storage.clear();
+  }
+};
+const context = vm.createContext({
+  window: {},
+  localStorage,
+  Date,
+  JSON,
+  console
+});
+context.window.localStorage = localStorage;
+
+for (const file of [
+  'seed-base.js',
+  'trainings-a.js',
+  'trainings-b.js',
+  'data-final.js',
+  'status-fixture.js'
+]) {
   new vm.Script(scripts[file], { filename: file }).runInContext(context);
 }
 
@@ -109,6 +147,40 @@ for (const training of seed.trainings) {
     assert(Array.isArray(training.slides?.[language]) && training.slides[language].length > 0, `${training.id} has ${language} training content`);
   }
 }
+
+const fixtureState = JSON.parse(localStorage.getItem('safetrack-static-v6') || 'null');
+assert(fixtureState && Array.isArray(fixtureState.catalog), 'balanced fixture stores the catalog');
+assert(Array.isArray(fixtureState.records), 'balanced fixture stores completion records');
+
+const completed = new Set(
+  fixtureState.records.map(record => `${record.employeeId}::${record.trainingId}`)
+);
+const offsets = [-18, -4, 2, 4, 9, 17, 28, 48, 75, 110, 160, 240];
+const classify = days => days <= 5 ? 'critical' : days <= 30 ? 'soon' : 'valid';
+const required = (employee, training) =>
+  training.active !== false &&
+  training.roles.some(role => role === 'all' || role === employee[4]);
+
+const distribution = { critical: 0, soon: 0, valid: 0 };
+seed.employees.forEach((employee, employeeIndex) => {
+  const assigned = fixtureState.catalog.filter(training => required(employee, training));
+  const statuses = assigned.map((training, trainingIndex) => {
+    if (completed.has(`${employee[1]}::${training.id}`)) return 'valid';
+    return classify(offsets[(employeeIndex * 7 + trainingIndex * 5) % offsets.length]);
+  });
+  const overall = statuses.includes('critical')
+    ? 'critical'
+    : statuses.includes('soon')
+      ? 'soon'
+      : 'valid';
+  distribution[overall] += 1;
+});
+
+report.counts.statusDistribution = distribution;
+assert(distribution.critical === 12, `exactly 12 demo employees are critical (${distribution.critical})`);
+assert(distribution.soon === 15, `exactly 15 demo employees are due in 6–30 days (${distribution.soon})`);
+assert(distribution.valid === 18, `exactly 18 demo employees are fully current (${distribution.valid})`);
+assert(distribution.critical + distribution.soon + distribution.valid === 45, 'all demo employees belong to exactly one status');
 
 assert(/localStorage/.test(scripts['app.js']), 'app.js contains local browser persistence');
 assert(/data-a=["']edit/.test(scripts['app.js']), 'app.js contains training editing controls');
