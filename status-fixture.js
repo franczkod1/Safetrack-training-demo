@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'safetrack-static-v6';
   const FIXTURE_KEY = 'safetrack-balanced-status-v1';
-  const FIXTURE_ID = 'balanced-12-15-18-v1';
+  const FIXTURE_ID = 'balanced-5-10-30-v2';
   const OFFSETS = [-18, -4, 2, 4, 9, 17, 28, 48, 75, 110, 160, 240];
   const seed = window.SafeTrackSeed;
 
@@ -35,9 +35,9 @@
   const today = new Date().toISOString().slice(0, 10);
 
   seed.employees.forEach((employee, employeeIndex) => {
-    const desiredStatus = employeeIndex < 12
+    const desiredStatus = employeeIndex < 5
       ? 'critical'
-      : employeeIndex < 27
+      : employeeIndex < 15
         ? 'soon'
         : 'valid';
 
