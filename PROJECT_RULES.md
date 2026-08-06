@@ -32,6 +32,10 @@
 21. Printing must offer both confirmation-only output and full training content followed by a separate confirmation page.
 22. Critical and 6–30-day trainings must have separate bulk-selection controls, and each control must be verified to select only its own status.
 23. A category toggle must synchronize `aria-expanded` and the controlled element's `hidden` state on the first activation.
+24. One selected training must produce exactly one physical A4 confirmation page, verified by generating and counting pages in an actual PDF.
+25. A signed confirmation page must contain completion date, supervisor name, supervisor personnel number, employee signature and supervisor signature, and must not contain operational `Fällig` or `Status` fields.
+26. Every training category in an employee profile must start collapsed regardless of critical, due-soon or valid status.
+27. The employee menu must first display only job titles actually assigned in the employee `Tätigkeit` field; each job-title group must start collapsed and expand in one activation.
 
 ## Mandatory error-learning protocol
 
