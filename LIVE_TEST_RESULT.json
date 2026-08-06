@@ -1,12 +1,12 @@
 {
-  "testedAt": "2026-08-06T12:07:49.541Z",
-  "commit": "e2bd067aafe68c3c987af03b19fbc140e65e51ed",
-  "url": "https://franczkod1.github.io/Safetrack-training-demo/?live-test=e2bd067aafe68c3c987af03b19fbc140e65e51ed",
+  "testedAt": "2026-08-06T13:50:08.350Z",
+  "commit": "7166b80b1a662e56b52dbbd13fb0ac28ce73a468",
+  "url": "https://franczkod1.github.io/Safetrack-training-demo/?live-test=7166b80b1a662e56b52dbbd13fb0ac28ce73a468",
   "expectedBuild": "direct-static-v7",
   "passed": false,
   "checks": {
     "staticValidationOutcome": "success",
-    "deploymentOutcome": "failure",
+    "deploymentOutcome": "cancelled",
     "browserTestOutcome": "skipped"
   },
   "errors": [
