@@ -1,0 +1,2 @@
+(()=>{const B=window._B,T=window._T,G=window._G;const trainings=T.map(x=>{const [id,icon,category,roles,months,version,title,quiz]=x,description={},slides={},questions={};B.langs.forEach(l=>{const g=G[l],cat=B.categories[category][l]||B.categories[category].de;description[l]=g.desc.replace('{cat}',cat);slides[l]=[[g.slide1,g.points],[g.slide2,g.points2]];if(quiz)questions[l]=[{q:g.q,o:g.opts,a:1}]});return{id,icon,category,roles,months,version,title,description,slides,questions,active:true}});window.SafeTrackSeed={...B,trainings}
+})();
