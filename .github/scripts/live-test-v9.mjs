@@ -65,6 +65,12 @@ try {
     throw new Error(`Category did not toggle in one click: ${beforeExpanded}/${beforeHidden} -> ${afterExpanded}/${afterHidden}`);
   }
   result.checks.singleClickToggle = { beforeExpanded, beforeHidden, afterExpanded, afterHidden };
+  await toggle.click();
+  const restoredExpanded = await toggle.getAttribute('aria-expanded');
+  const restoredHidden = await page.locator(`#${controls}`).evaluate(node => node.hidden);
+  if (restoredExpanded !== beforeExpanded || restoredHidden !== beforeHidden) {
+    throw new Error(`Category toggle did not restore its original state: ${restoredExpanded}/${restoredHidden}`);
+  }
 
   await page.locator('[data-st-action="clear"]').click();
   const expectedSoon = await page.locator('.st-training-choice[data-status="soon"]').count();
