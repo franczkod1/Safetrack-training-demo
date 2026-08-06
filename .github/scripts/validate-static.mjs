@@ -4,12 +4,14 @@ import vm from 'node:vm';
 const requiredFiles = [
   'index.html',
   'styles.css',
+  'employee-training-groups.css',
   'seed-base.js',
   'trainings-a.js',
   'trainings-b.js',
   'data-final.js',
   'status-fixture.js',
-  'app.js'
+  'app.js',
+  'employee-training-groups.js'
 ];
 
 const report = {
@@ -32,19 +34,21 @@ for (const file of requiredFiles) {
 
 const index = await readFile('index.html', 'utf8');
 const styles = await readFile('styles.css', 'utf8');
+const employeeStyles = await readFile('employee-training-groups.css', 'utf8');
 const scriptNames = [
   'seed-base.js',
   'trainings-a.js',
   'trainings-b.js',
   'data-final.js',
   'status-fixture.js',
-  'app.js'
+  'app.js',
+  'employee-training-groups.js'
 ];
 const scripts = Object.fromEntries(
   await Promise.all(scriptNames.map(async file => [file, await readFile(file, 'utf8')]))
 );
 
-for (const reference of ['styles.css', ...scriptNames]) {
+for (const reference of ['styles.css', 'employee-training-groups.css', ...scriptNames]) {
   assert(index.includes(reference), `index.html references ${reference}`);
 }
 
@@ -55,9 +59,9 @@ for (const reference of scriptNames) {
   previousIndex = currentIndex;
 }
 
-assert(index.includes('direct-static-v7'), 'index.html contains the direct-static-v7 build marker');
+assert(index.includes('direct-static-v8'), 'index.html contains the direct-static-v8 build marker');
 
-const publicSource = [index, styles, ...Object.values(scripts)].join('\n');
+const publicSource = [index, styles, employeeStyles, ...Object.values(scripts)].join('\n');
 const forbiddenTokens = [
   'DecompressionStream',
   'catalog50-v1/part',
@@ -177,9 +181,9 @@ seed.employees.forEach((employee, employeeIndex) => {
 });
 
 report.counts.statusDistribution = distribution;
-assert(distribution.critical === 12, `exactly 12 demo employees are critical (${distribution.critical})`);
-assert(distribution.soon === 15, `exactly 15 demo employees are due in 6–30 days (${distribution.soon})`);
-assert(distribution.valid === 18, `exactly 18 demo employees are fully current (${distribution.valid})`);
+assert(distribution.critical === 5, `exactly 5 demo employees are critical (${distribution.critical})`);
+assert(distribution.soon === 10, `exactly 10 demo employees are due in 6–30 days (${distribution.soon})`);
+assert(distribution.valid === 30, `exactly 30 demo employees are fully current (${distribution.valid})`);
 assert(distribution.critical + distribution.soon + distribution.valid === 45, 'all demo employees belong to exactly one status');
 
 assert(/localStorage/.test(scripts['app.js']), 'app.js contains local browser persistence');
@@ -187,6 +191,16 @@ assert(/data-a=["']edit/.test(scripts['app.js']), 'app.js contains training edit
 assert(/data-a=["']delete/.test(scripts['app.js']), 'app.js contains training deletion controls');
 assert(/data-a=["']copy/.test(scripts['app.js']), 'app.js contains training duplication controls');
 assert(/JSON exportieren/.test(scripts['app.js']) && /JSON importieren/.test(scripts['app.js']), 'app.js contains JSON export and import controls');
+
+const employeeGroups = scripts['employee-training-groups.js'];
+assert(/groupsFor/.test(employeeGroups), 'employee training enhancement groups assigned trainings by existing categories');
+assert(/data-st-category/.test(employeeGroups), 'employee training enhancement contains category selection controls');
+assert(/data-st-training/.test(employeeGroups), 'employee training enhancement contains individual training selection controls');
+assert(/select-critical/.test(employeeGroups), 'employee training enhancement can select all critical trainings');
+assert(/startBatch/.test(employeeGroups), 'employee training enhancement supports sequential multi-training start');
+assert(/printSelection/.test(employeeGroups), 'employee training enhancement supports printing selected trainings');
+assert(/@media print/.test(employeeStyles), 'employee training stylesheet contains a dedicated print layout');
+assert(/aria-checked/.test(employeeGroups) && /indeterminate/.test(employeeGroups), 'category selection exposes mixed checkbox state');
 
 report.passed = true;
 console.log(JSON.stringify(report, null, 2));
