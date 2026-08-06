@@ -7,6 +7,7 @@ on:
       - LIVE_TEST_RESULT.json
       - LIVE_TEST_SCREENSHOT.png
       - STATIC_VALIDATION_RESULT.txt
+      - DEPLOYMENT_VALIDATION_RESULT.txt
   workflow_dispatch:
 
 permissions:
@@ -19,7 +20,7 @@ concurrency:
 jobs:
   validate-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Remove previous test artifacts
-        run: rm -f LIVE_TEST_RESULT.json LIVE_TEST_SCREENSHOT.png STATIC_VALIDATION_RESULT.txt
+        run: rm -f LIVE_TEST_RESULT.json LIVE_TEST_SCREENSHOT.png STATIC_VALIDATION_RESULT.txt DEPLOYMENT_VALIDATION_RESULT.txt
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -51,6 +52,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
+          exec > >(tee DEPLOYMENT_VALIDATION_RESULT.txt) 2>&1
           set -euo pipefail
           base='https://franczkod1.github.io/Safetrack-training-demo/'
           files=(
@@ -66,13 +68,13 @@ jobs:
             employee-training-groups.js
           )
 
-          for attempt in $(seq 1 36); do
+          for attempt in $(seq 1 72); do
             all_match=1
             rm -rf /tmp/safetrack-pages-check
             mkdir -p /tmp/safetrack-pages-check
 
             for file in "${files[@]}"; do
-              if ! curl -fsSL "${base}${file}?commit=${GITHUB_SHA}&attempt=${attempt}" -o "/tmp/safetrack-pages-check/${file}"; then
+              if ! curl -H 'Cache-Control: no-cache' -fsSL "${base}${file}?commit=${GITHUB_SHA}&attempt=${attempt}" -o "/tmp/safetrack-pages-check/${file}"; then
                 echo "${file}: not available yet"
                 all_match=0
                 continue
@@ -89,11 +91,22 @@ jobs:
               exit 0
             fi
 
-            echo "Waiting for GitHub Pages deployment (${attempt}/36)..."
+            echo "Waiting for GitHub Pages deployment (${attempt}/72)..."
             sleep 10
           done
 
           echo 'Timed out waiting for the exact direct static GitHub Pages deployment.'
+          echo 'Final SHA-256 comparison:'
+          for file in "${files[@]}"; do
+            printf '%s repository=' "${file}"
+            sha256sum "${file}" | cut -d' ' -f1
+            printf '%s deployed=' "${file}"
+            if [ -f "/tmp/safetrack-pages-check/${file}" ]; then
+              sha256sum "/tmp/safetrack-pages-check/${file}" | cut -d' ' -f1
+            else
+              echo 'missing'
+            fi
+          done
           exit 1
 
       - name: Install browser test tools
@@ -121,8 +134,15 @@ jobs:
           const fs = require('fs');
           if (!fs.existsSync('LIVE_TEST_RESULT.json')) {
             const staticLog = fs.existsSync('STATIC_VALIDATION_RESULT.txt')
-              ? fs.readFileSync('STATIC_VALIDATION_RESULT.txt', 'utf8')
+              ? fs.readFileSync('STATIC_VALIDATION_RESULT.txt', 'utf8').trim()
               : '';
+            const deploymentLog = fs.existsSync('DEPLOYMENT_VALIDATION_RESULT.txt')
+              ? fs.readFileSync('DEPLOYMENT_VALIDATION_RESULT.txt', 'utf8').trim()
+              : '';
+            const errors = [];
+            if (staticLog) errors.push(`Static validation:\n${staticLog}`);
+            if (deploymentLog) errors.push(`Deployment validation:\n${deploymentLog}`);
+            if (!errors.length) errors.push('The workflow stopped before the browser test produced a result.');
             const result = {
               testedAt: new Date().toISOString(),
               commit: process.env.TEST_COMMIT,
@@ -134,7 +154,7 @@ jobs:
                 deploymentOutcome: process.env.DEPLOY_OUTCOME || 'not-run',
                 browserTestOutcome: process.env.SMOKE_OUTCOME || 'not-run'
               },
-              errors: [staticLog.trim() || 'The workflow stopped before the browser test produced a result.']
+              errors
             };
             fs.writeFileSync('LIVE_TEST_RESULT.json', `${JSON.stringify(result, null, 2)}\n`);
           }
@@ -146,6 +166,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add LIVE_TEST_RESULT.json STATIC_VALIDATION_RESULT.txt
+          if [ -f DEPLOYMENT_VALIDATION_RESULT.txt ]; then git add DEPLOYMENT_VALIDATION_RESULT.txt; fi
           if [ -f LIVE_TEST_SCREENSHOT.png ]; then git add LIVE_TEST_SCREENSHOT.png; fi
           if ! git diff --cached --quiet; then
             git commit -m "Record SafeTrack direct static live test [skip ci]"
