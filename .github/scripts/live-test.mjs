@@ -4,12 +4,12 @@ import { writeFile } from 'node:fs/promises';
 const commit = process.env.GITHUB_SHA || 'manual';
 const base = 'https://franczkod1.github.io/Safetrack-training-demo/';
 const testUrl = `${base}?live-test=${encodeURIComponent(commit)}`;
-const expectedDistribution = { critical: 12, soon: 15, valid: 18 };
+const expectedDistribution = { critical: 5, soon: 10, valid: 30 };
 const result = {
   testedAt: new Date().toISOString(),
   commit,
   url: testUrl,
-  expectedBuild: 'direct-static-v7',
+  expectedBuild: 'direct-static-v8',
   passed: false,
   checks: {},
   errors: []
@@ -20,7 +20,10 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await context.addInitScript(() => localStorage.clear());
+  await context.addInitScript(() => {
+    localStorage.clear();
+    window.print = () => { window.__stPrintCalled = true; };
+  });
   const page = await context.newPage();
   const runtimeErrors = [];
 
@@ -87,6 +90,85 @@ try {
     const clearedRows = await page.locator('tbody tr').count();
     result.checks.statusCards[status] = { ...displayed, filteredRows, clearedRows, selectedStatus };
   }
+
+  await page.goto(`${base}?employee-groups-test=${encodeURIComponent(commit)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.locator('.kpi[data-s="critical"]').click();
+  await page.waitForSelector('tbody tr', { timeout: 10000 });
+  await page.locator('tbody tr [data-a="employee"]').first().click();
+  await page.waitForSelector('.st-category-group', { timeout: 15000 });
+
+  const groupState = await page.evaluate(() => {
+    const rank = { critical: 0, soon: 1, valid: 2 };
+    const categories = [...document.querySelectorAll('.st-category-group')].map(group => ({
+      category: group.dataset.category || '',
+      status: group.dataset.status || '',
+      items: group.querySelectorAll('[data-st-training]').length
+    }));
+    const knownCategories = new Set(Object.keys(window.SafeTrackSeed?.categories || {}));
+    return {
+      categories,
+      sortedWorstFirst: categories.every((group, index) => index === 0 || rank[categories[index - 1].status] <= rank[group.status]),
+      allUseCatalogCategories: categories.every(group => knownCategories.has(group.category)),
+      categoryCount: categories.length,
+      totalItems: categories.reduce((sum, group) => sum + group.items, 0)
+    };
+  });
+  result.checks.employeeGroups = groupState;
+  if (!groupState.categoryCount || !groupState.totalItems) throw new Error('Employee profile contains no grouped trainings.');
+  if (!groupState.sortedWorstFirst) throw new Error('Employee training categories are not sorted from worst to best status.');
+  if (!groupState.allUseCatalogCategories) throw new Error('Employee profile uses a category that is not present in the training catalog.');
+
+  const firstCategory = page.locator('.st-category-group').first();
+  const firstCategoryItems = await firstCategory.locator('[data-st-training]').count();
+  await firstCategory.locator('[data-st-category]').check();
+  const categorySelectedCount = Number(await page.locator('[data-st-count]').textContent());
+  if (categorySelectedCount !== firstCategoryItems) {
+    throw new Error(`Category selection selected ${categorySelectedCount} trainings; expected ${firstCategoryItems}.`);
+  }
+  const categoryCheckboxState = await firstCategory.locator('[data-st-category]').evaluate(input => ({
+    checked: input.checked,
+    indeterminate: input.indeterminate,
+    ariaChecked: input.getAttribute('aria-checked')
+  }));
+  result.checks.employeeGroups.categorySelection = { firstCategoryItems, categorySelectedCount, categoryCheckboxState };
+  if (!categoryCheckboxState.checked || categoryCheckboxState.indeterminate) throw new Error('Full category selection did not set the category checkbox correctly.');
+
+  await page.locator('[data-st-action="clear"]').click();
+  const choices = page.locator('[data-st-training]');
+  if (await choices.count() < 2) throw new Error('Employee profile has fewer than two selectable trainings.');
+  await choices.nth(0).check();
+  await choices.nth(1).check();
+  const multiSelectedCount = Number(await page.locator('[data-st-count]').textContent());
+  if (multiSelectedCount !== 2) throw new Error(`Multi-selection count is ${multiSelectedCount}; expected 2.`);
+
+  await page.locator('[data-st-action="print"]').click();
+  const printState = await page.evaluate(() => ({
+    called: window.__stPrintCalled === true,
+    rows: document.querySelectorAll('#st-print-sheet tbody tr').length
+  }));
+  result.checks.employeeGroups.multiSelection = { multiSelectedCount, printState };
+  if (!printState.called || printState.rows !== 2) throw new Error(`Print selection failed: ${JSON.stringify(printState)}.`);
+
+  await page.locator('[data-st-action="start"]').click();
+  await page.waitForSelector('.session-card', { timeout: 10000 });
+  const batchSession = await page.evaluate(() => ({
+    sessionVisible: Boolean(document.querySelector('.session-card')),
+    employee: document.querySelector('.modal-head span')?.textContent || ''
+  }));
+  result.checks.employeeGroups.batchStart = batchSession;
+  if (!batchSession.sessionVisible) throw new Error('Starting a multi-selection did not open the first training session.');
+  await page.locator('[data-a="close"]').first().click();
+
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto(`${base}?employee-mobile-test=${encodeURIComponent(commit)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.locator('.kpi[data-s="critical"]').click();
+  await page.locator('tbody tr [data-a="employee"]').first().click();
+  await page.waitForSelector('.st-category-group', { timeout: 15000 });
+  const employeeMobileOverflow = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth));
+  result.checks.employeeGroups.mobileOverflow = employeeMobileOverflow;
+  if (employeeMobileOverflow > 0) throw new Error(`Employee grouped profile has ${employeeMobileOverflow}px horizontal overflow at 320px.`);
+  await page.locator('[data-a="close"]').first().click();
+  await page.setViewportSize({ width: 1440, height: 1000 });
 
   await page.goto(`${base}?catalog-test=${encodeURIComponent(commit)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('[data-page="trainings"]', { timeout: 15000 });
