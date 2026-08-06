@@ -25,8 +25,15 @@
 
   function ensureVersionBadge(){
     let badge=document.querySelector('.st-version-badge');
-    if(!badge){badge=document.createElement('div');badge.className='st-version-badge';badge.setAttribute('aria-label',`Aktuelle Version ${VERSION}`);document.body.appendChild(badge)}
-    badge.textContent=VERSION;
+    if(!badge){
+      badge=document.createElement('div');
+      badge.className='st-version-badge';
+      badge.setAttribute('aria-label',`Aktuelle Version ${VERSION}`);
+      badge.textContent=VERSION;
+      document.body.appendChild(badge);
+    }else if(badge.textContent!==VERSION){
+      badge.textContent=VERSION;
+    }
   }
 
   function selectedTrainingIds(){
