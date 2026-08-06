@@ -9,12 +9,15 @@
 
 ## Mandatory release validation
 
-1. `safetrack-demo.html` is the single source of truth for the application.
-2. Every deployable payload must be regenerated from the current source. Old payload chunks must never be reused.
-3. Before publication, reconstruct the deployable artifact and compare its SHA-256 hash byte-for-byte with the source.
-4. After publication, test the actual public GitHub Pages URL in a real browser. Local tests and screenshots are not sufficient.
-5. A function may only be reported as working after an end-to-end interaction verifies the expected state change on the deployed version.
-6. For dashboard cards, the mandatory smoke test is: activate every card, verify navigation to the employee list, verify the correct status filter and count, then clear the filter.
-7. Record the source SHA, deployment SHA, commit SHA, public test URL, and test result in the test report.
-8. Never attribute a failure to the ChatGPT preview, Safari, or another environment until the published source and its event handlers have been inspected directly.
-9. Never claim a test passed when it was run against a different artifact than the one actually deployed.
+1. The production-facing GitHub Pages release must use normal static web files (`index.html`, `styles.css`, `app.js` and optional JSON data files).
+2. Browser-side Base64 assembly, GZIP decompression or similar runtime reconstruction must not be the primary application loader.
+3. Every deployable artifact must be regenerated from the current source. Old payload chunks must never be reused for a new release.
+4. Before publication, compare the release files and their recorded SHA-256 hashes with the tested source.
+5. After publication, test the actual public GitHub Pages URL in a real browser. Local tests and screenshots are not sufficient.
+6. Startup must be tested separately in current desktop Chromium and mobile Safari/iOS. A blank page, loader loop or decoding error is a release blocker.
+7. A function may only be reported as working after an end-to-end interaction verifies the expected state change on the deployed version.
+8. For dashboard cards, the mandatory smoke test is: activate every card, verify navigation to the employee list, verify the correct status filter and count, then clear the filter.
+9. Record the source SHA, deployment SHA, commit SHA, public test URL, browser and test result in the test report.
+10. Never attribute a failure to the ChatGPT preview, Safari or another environment until the published source and its startup/event handlers have been inspected directly.
+11. Never claim a test passed when it was run against a different artifact than the one actually deployed.
+12. If automated deployment does not start, do not silently claim success. Record the blocked step and use a verified recovery path.
