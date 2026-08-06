@@ -36,6 +36,9 @@
 25. A signed confirmation page must contain completion date, supervisor name, supervisor personnel number, employee signature and supervisor signature, and must not contain operational `Fällig` or `Status` fields.
 26. Every training category in an employee profile must start collapsed regardless of critical, due-soon or valid status.
 27. The employee menu must first display only job titles actually assigned in the employee `Tätigkeit` field; each job-title group must start collapsed and expand in one activation.
+28. One user interaction domain may have only one active implementation module. Layered override modules for the same employee, category, selection or print behavior are prohibited.
+29. Confirmation-page layout must use compact normal document flow. Fixed physical page heights, flexible spacer rows and bottom-pushing signature layouts are prohibited.
+30. Chromium PDF page counts are necessary but not sufficient for iOS printing; confirmation pagination requires a final iPhone/Safari print-preview acceptance check.
 
 ## Mandatory error-learning protocol
 
