@@ -21,3 +21,7 @@
 10. Never attribute a failure to the ChatGPT preview, Safari or another environment until the published source and its startup/event handlers have been inspected directly.
 11. Never claim a test passed when it was run against a different artifact than the one actually deployed.
 12. If automated deployment does not start, do not silently claim success. Record the blocked step and use a verified recovery path.
+13. Dashboard tests must compare the filtered result with the employee count displayed on the selected card; they must not assume that a status can never contain all employees.
+14. Presentation test data must contain meaningful representatives of every primary status. The default SafeTrack fixture is 12 critical, 15 due in 6–30 days and 18 fully current employees.
+15. Generated CI result files must be staged and committed before `git pull --rebase`. A rebase must never run with unstaged or uncommitted generated artifacts.
+16. Every workflow failure must persist the failing step, validation output and browser-test result whenever repository permissions allow it.
