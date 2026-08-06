@@ -1,3 +1,5 @@
 SafeTrack v14 deployment trigger
-2026-08-06T21:49:00+02:00
+2026-08-06T22:52:00+02:00
 Workflow: Deploy SafeTrack Pages
+Pages source: GitHub Actions
+Reason: publish verified v14 feature implementation after checkout@v4 workflow repair
