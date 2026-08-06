@@ -3,56 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="safetrack-loader-build" content="2026-08-06-status-v2-lite-4">
+<meta name="safetrack-loader-build" content="catalog-50-loader-20260806-1">
 <title>SafeTrack wird geladen</title>
 <style>
 html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f7fb;color:#101828}
-main{height:100%;display:grid;place-items:center;padding:24px;text-align:center}
-.spinner{width:44px;height:44px;border:4px solid #dbe7ff;border-top-color:#155eef;border-radius:50%;animation:s 1s linear infinite;margin:auto}
-@keyframes s{to{transform:rotate(360deg)}}
-p{color:#667085}#error{color:#b42318;max-width:680px;white-space:pre-wrap}
+main{height:100%;display:grid;place-items:center;padding:24px;text-align:center}.spinner{width:44px;height:44px;border:4px solid #dbe7ff;border-top-color:#155eef;border-radius:50%;animation:s 1s linear infinite;margin:auto}@keyframes s{to{transform:rotate(360deg)}}p{color:#667085}#error{color:#b42318;white-space:pre-wrap;max-width:720px}
 </style>
 </head>
 <body>
 <main><div><div class="spinner"></div><h1>SafeTrack</h1><p id="status">Anwendung wird geladen…</p><p id="error"></p></div></main>
 <script>
 (async()=>{
-  const SOURCE_PATCH_FROM="else if(category===1)offset=trainingIndex===focus?7+(employeeIndex%4)*5:105+trainingIndex*36+(employeeIndex%3)*8;";
-  const SOURCE_PATCH_TO="else if(category===1)offset=trainingIndex===focus?2+(employeeIndex%4):105+trainingIndex*36+(employeeIndex%3)*8;";
-  const API_PATCH_FROM="  render();\n})();\n<\/script>";
-  const API_PATCH_TO="  window.__stApi={render,employees,trainingContent,state};\n  render();\n})();\n<\/script>";
-  const HOTFIX_SHA256="7cd4ddea6cc9bfbdb151df747196531833e544232030229e7ce1dcbaf79ec1d9";
+  const files=[
+    'catalog50-v1/part00.txt','catalog50-v1/part01.txt','catalog50-v1/part02.txt',
+    'catalog50-v1/part03.txt','catalog50-v1/part04.txt','catalog50-v1/part05.txt','catalog50-v1/part06.txt'
+  ];
+  const expected='8c4ee57d1dbd6e2e56190db9b5870e387f07157ca8ac2245051bf3eb2d01fb6c';
+  const build='20260806-catalog50-1';
   const hex=buffer=>[...new Uint8Array(buffer)].map(value=>value.toString(16).padStart(2,'0')).join('');
   try{
-    const payloadFiles=['payload/part00.txt','payload/part01.txt','payload/part02.txt','payload/part03.txt','payload/part04.txt','payload/part05.txt','payload/part06.txt'];
-    const hotfixFiles=['status-v3/part0.txt','status-v3/part1.txt','status-v4/part2.txt','status-v4/part3.txt'];
-    const fetchText=async file=>{
-      const response=await fetch(`${file}?v=20260806-status-v2-lite-4`,{cache:'no-store'});
+    const parts=await Promise.all(files.map(async file=>{
+      const response=await fetch(`${file}?v=${build}`,{cache:'no-store'});
       if(!response.ok)throw new Error(`${file}: HTTP ${response.status}`);
-      return response.text();
-    };
-    const [payloadParts,hotfixParts]=await Promise.all([
-      Promise.all(payloadFiles.map(fetchText)),
-      Promise.all(hotfixFiles.map(fetchText))
-    ]);
-    const base64=payloadParts.map(part=>part.trim()).join('');
-    const binary=atob(base64);
+      return (await response.text()).trim();
+    }));
+    const binary=atob(parts.join(''));
     const bytes=new Uint8Array(binary.length);
     for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
     if(!('DecompressionStream' in window))throw new Error('Dieser Browser unterstützt die benötigte GZIP-Dekomprimierung nicht.');
-    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-    let html=await new Response(stream).text();
-    if((html.match(new RegExp(SOURCE_PATCH_FROM.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length!==1)throw new Error('Datenmodell-Patch konnte nicht eindeutig angewendet werden.');
-    if((html.match(new RegExp(API_PATCH_FROM.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length!==1)throw new Error('Anwendungs-API konnte nicht eindeutig freigegeben werden.');
-    html=html.replace(SOURCE_PATCH_FROM,SOURCE_PATCH_TO).replace(API_PATCH_FROM,API_PATCH_TO);
-    const hotfixBase64=hotfixParts.map(part=>part.trim()).join('');
-    const hotfixBinary=atob(hotfixBase64);
-    const hotfixBytes=new Uint8Array(hotfixBinary.length);
-    for(let index=0;index<hotfixBinary.length;index++)hotfixBytes[index]=hotfixBinary.charCodeAt(index);
-    const hotfix=new TextDecoder().decode(hotfixBytes);
-    const digest=hex(await crypto.subtle.digest('SHA-256',hotfixBytes));
-    if(digest!==HOTFIX_SHA256)throw new Error(`Integritätsprüfung fehlgeschlagen. Erwartet ${HOTFIX_SHA256}, erhalten ${digest}.`);
-    html=html.replace('</body>',`<script>${hotfix}<\/script></body>`);
+    const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    const digest=hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(html)));
+    if(digest!==expected)throw new Error(`Integritätsprüfung fehlgeschlagen. Erwartet ${expected}, erhalten ${digest}.`);
     document.open();
     document.write(html);
     document.close();
