@@ -31,7 +31,7 @@ jobs:
       - name: Validate direct static source files
         run: |
           set -o pipefail
-          node .github/scripts/validate-static.mjs 2>&1 | tee STATIC_VALIDATION_RESULT.txt
+          node .github/scripts/validate-static-v9.mjs 2>&1 | tee STATIC_VALIDATION_RESULT.txt
 
       - name: Build exact GitHub Pages artifact
         run: |
@@ -114,7 +114,7 @@ jobs:
         continue-on-error: true
         env:
           SAFETRACK_DEPLOYED_URL: ${{ needs.deploy.outputs.page_url }}
-        run: node .github/scripts/live-test.mjs
+        run: node .github/scripts/live-test-v9.mjs
 
       - name: Save public test diagnostics
         if: always()
