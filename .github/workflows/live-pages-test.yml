@@ -1,4 +1,4 @@
-name: SafeTrack live Pages test
+name: SafeTrack direct static validation
 
 on:
   push:
@@ -6,68 +6,77 @@ on:
     paths-ignore:
       - LIVE_TEST_RESULT.json
       - LIVE_TEST_SCREENSHOT.png
-      - index.html
-      - styles.css
-      - app.js
-      - STATIC_BUILD.json
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: safetrack-live-pages-test
+  group: safetrack-direct-static-validation
   cancel-in-progress: true
 
 jobs:
-  live-test:
+  validate-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Build normal static SafeTrack files
-        run: python3 .github/scripts/build-direct-static.py
-
-      - name: Validate direct static output
-        run: |
-          test -s index.html
-          test -s styles.css
-          test -s app.js
-          test -s STATIC_BUILD.json
-          ! grep -q 'DecompressionStream' index.html
-          ! grep -q 'catalog50-v1/part' index.html
-          ! grep -q 'atob(' index.html
-          grep -q 'styles.css' index.html
-          grep -q 'app.js' index.html
-
-      - name: Publish direct static files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html styles.css app.js STATIC_BUILD.json
-          git commit -m "Publish direct static SafeTrack site [skip ci]" || true
-          git push
-
-      - name: Wait for GitHub Pages direct build
-        run: |
-          for attempt in $(seq 1 36); do
-            page=$(curl -fsSL "https://franczkod1.github.io/Safetrack-training-demo/?build=direct-static-${GITHUB_SHA}" || true)
-            if printf '%s' "$page" | grep -q 'catalog50-direct-static-20260806-1'; then
-              echo "Direct static GitHub Pages build is live."
-              exit 0
-            fi
-            echo "Waiting for GitHub Pages deployment ($attempt/36)..."
-            sleep 10
-          done
-          echo "Timed out waiting for the direct static GitHub Pages build."
-          exit 1
-
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Validate direct static source files
+        run: node .github/scripts/validate-static.mjs
+
+      - name: Wait for the exact GitHub Pages files
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://franczkod1.github.io/Safetrack-training-demo/'
+          files=(
+            index.html
+            styles.css
+            seed-base.js
+            trainings-a.js
+            trainings-b.js
+            data-final.js
+            app.js
+          )
+
+          for attempt in $(seq 1 36); do
+            all_match=1
+            rm -rf /tmp/safetrack-pages-check
+            mkdir -p /tmp/safetrack-pages-check
+
+            for file in "${files[@]}"; do
+              if ! curl -fsSL "${base}${file}?commit=${GITHUB_SHA}&attempt=${attempt}" -o "/tmp/safetrack-pages-check/${file}"; then
+                echo "${file}: not available yet"
+                all_match=0
+                continue
+              fi
+
+              if ! cmp -s "${file}" "/tmp/safetrack-pages-check/${file}"; then
+                echo "${file}: deployed bytes do not yet match the checked-out file"
+                all_match=0
+              fi
+            done
+
+            if [ "${all_match}" -eq 1 ]; then
+              echo 'The exact checked-out static files are live on GitHub Pages.'
+              exit 0
+            fi
+
+            echo "Waiting for GitHub Pages deployment (${attempt}/36)..."
+            sleep 10
+          done
+
+          echo 'Timed out waiting for the exact direct static GitHub Pages deployment.'
+          exit 1
 
       - name: Install browser test tools
         run: |
@@ -91,6 +100,6 @@ jobs:
           git commit -m "Record SafeTrack direct static live test [skip ci]" || exit 0
           git push
 
-      - name: Enforce test result
+      - name: Enforce public test result
         if: always()
         run: node -e "const r=require('./LIVE_TEST_RESULT.json'); if(!r.passed){console.error(r); process.exit(1)}"
