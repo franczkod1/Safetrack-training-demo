@@ -6,6 +6,10 @@ on:
     paths-ignore:
       - LIVE_TEST_RESULT.json
       - LIVE_TEST_SCREENSHOT.png
+      - index.html
+      - styles.css
+      - app.js
+      - STATIC_BUILD.json
   workflow_dispatch:
 
 permissions:
@@ -18,30 +22,75 @@ concurrency:
 jobs:
   live-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build normal static SafeTrack files
+        run: python3 .github/scripts/build-direct-static.py
+
+      - name: Validate direct static output
+        run: |
+          test -s index.html
+          test -s styles.css
+          test -s app.js
+          test -s STATIC_BUILD.json
+          ! grep -q 'DecompressionStream' index.html
+          ! grep -q 'catalog50-v1/part' index.html
+          ! grep -q 'atob(' index.html
+          grep -q 'styles.css' index.html
+          grep -q 'app.js' index.html
+
+      - name: Publish direct static files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html styles.css app.js STATIC_BUILD.json
+          git commit -m "Publish direct static SafeTrack site [skip ci]" || true
+          git push
+
+      - name: Wait for GitHub Pages direct build
+        run: |
+          for attempt in $(seq 1 36); do
+            page=$(curl -fsSL "https://franczkod1.github.io/Safetrack-training-demo/?build=direct-static-${GITHUB_SHA}" || true)
+            if printf '%s' "$page" | grep -q 'catalog50-direct-static-20260806-1'; then
+              echo "Direct static GitHub Pages build is live."
+              exit 0
+            fi
+            echo "Waiting for GitHub Pages deployment ($attempt/36)..."
+            sleep 10
+          done
+          echo "Timed out waiting for the direct static GitHub Pages build."
+          exit 1
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install browser test tools
         run: |
           npm init -y
           npm install playwright@1.55.0
           npx playwright install --with-deps chromium
+
       - name: Test the deployed GitHub Pages site
         id: smoke
         continue-on-error: true
         run: node .github/scripts/live-test.mjs
+
       - name: Save public test result
         if: always()
         run: |
+          git pull --rebase
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add LIVE_TEST_RESULT.json
           if [ -f LIVE_TEST_SCREENSHOT.png ]; then git add LIVE_TEST_SCREENSHOT.png; fi
-          git commit -m "Record SafeTrack live Pages test [skip ci]" || exit 0
+          git commit -m "Record SafeTrack direct static live test [skip ci]" || exit 0
           git push
+
       - name: Enforce test result
         if: always()
         run: node -e "const r=require('./LIVE_TEST_RESULT.json'); if(!r.passed){console.error(r); process.exit(1)}"
