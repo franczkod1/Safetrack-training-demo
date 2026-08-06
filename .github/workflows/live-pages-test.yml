@@ -31,7 +31,7 @@ jobs:
       - name: Validate direct static source files
         run: |
           set -o pipefail
-          node .github/scripts/validate-static-v9.mjs 2>&1 | tee STATIC_VALIDATION_RESULT.txt
+          node .github/scripts/validate-static-v10.mjs 2>&1 | tee STATIC_VALIDATION_RESULT.txt
 
       - name: Build exact GitHub Pages artifact
         run: |
@@ -42,6 +42,7 @@ jobs:
             index.html
             styles.css
             employee-training-groups.css
+            safetrack-v10.css
             seed-base.js
             trainings-a.js
             trainings-b.js
@@ -49,6 +50,7 @@ jobs:
             status-fixture.js
             app.js
             employee-training-groups.js
+            safetrack-v10.js
           )
           for file in "${files[@]}"; do
             test -s "${file}"
@@ -103,10 +105,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install browser test tools
+      - name: Install browser and PDF test tools
         run: |
           npm init -y
-          npm install playwright@1.55.0
+          npm install playwright@1.55.0 pdf-lib@1.17.1
           npx playwright install --with-deps chromium
 
       - name: Test the deployed GitHub Pages site
@@ -114,7 +116,7 @@ jobs:
         continue-on-error: true
         env:
           SAFETRACK_DEPLOYED_URL: ${{ needs.deploy.outputs.page_url }}
-        run: node .github/scripts/live-test-v9.mjs
+        run: node .github/scripts/live-test-v10.mjs
 
       - name: Save public test diagnostics
         if: always()
@@ -124,6 +126,8 @@ jobs:
           path: |
             LIVE_TEST_RESULT.json
             LIVE_TEST_SCREENSHOT.png
+            CONFIRMATION_ONE_PAGE.pdf
+            CONFIRMATION_TWO_PAGES.pdf
           if-no-files-found: warn
           retention-days: 30
 
