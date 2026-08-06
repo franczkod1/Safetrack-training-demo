@@ -4,11 +4,12 @@ import { writeFile } from 'node:fs/promises';
 const commit = process.env.GITHUB_SHA || 'manual';
 const base = 'https://franczkod1.github.io/Safetrack-training-demo/';
 const testUrl = `${base}?live-test=${encodeURIComponent(commit)}`;
+const expectedDistribution = { critical: 12, soon: 15, valid: 18 };
 const result = {
   testedAt: new Date().toISOString(),
   commit,
   url: testUrl,
-  expectedBuild: 'direct-static-v6',
+  expectedBuild: 'direct-static-v7',
   passed: false,
   checks: {},
   errors: []
@@ -18,7 +19,9 @@ let browser;
 
 try {
   browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await context.addInitScript(() => localStorage.clear());
+  const page = await context.newPage();
   const runtimeErrors = [];
 
   page.on('pageerror', error => runtimeErrors.push(`pageerror: ${String(error)}`));
@@ -49,19 +52,40 @@ try {
   result.checks.statusCards = {};
   for (const status of ['critical', 'soon', 'valid']) {
     await page.goto(`${base}?status-test=${status}&commit=${encodeURIComponent(commit)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector(`.kpi[data-s="${status}"]`, { timeout: 15000 });
-    await page.locator(`.kpi[data-s="${status}"]`).click();
+    const card = page.locator(`.kpi[data-s="${status}"]`);
+    await card.waitFor({ state: 'visible', timeout: 15000 });
+
+    const displayed = await card.evaluate(element => {
+      const values = [...element.querySelectorAll('.kpi.dual strong')].map(node => node.textContent?.trim() || '');
+      return {
+        trainingText: values[0] || '',
+        employeeText: values[1] || '',
+        employeeCount: Number.parseInt((values[1] || '').split('/')[0], 10)
+      };
+    });
+
+    if (!Number.isInteger(displayed.employeeCount)) {
+      throw new Error(`${status} dashboard card has no readable employee count: ${displayed.employeeText}.`);
+    }
+    if (displayed.employeeCount !== expectedDistribution[status]) {
+      throw new Error(`${status} dashboard card displays ${displayed.employeeCount} employees; expected ${expectedDistribution[status]}.`);
+    }
+
+    await card.click();
     await page.waitForSelector('#emp', { timeout: 10000 });
     await page.waitForFunction(expected => document.querySelector('#emp')?.value === expected, status, { timeout: 10000 });
+
     const filteredRows = await page.locator('tbody tr').count();
     const selectedStatus = await page.locator('#emp').inputValue();
-    if (filteredRows <= 0 || filteredRows >= 45) throw new Error(`${status} dashboard card produced ${filteredRows} employee rows.`);
+    if (filteredRows !== displayed.employeeCount) {
+      throw new Error(`${status} dashboard card displays ${displayed.employeeCount} employees but the filtered list contains ${filteredRows}.`);
+    }
     if (selectedStatus !== status) throw new Error(`${status} dashboard card selected ${selectedStatus || 'no'} filter.`);
 
     await page.locator('[data-a="clear"]').click();
     await page.waitForFunction(() => document.querySelectorAll('tbody tr').length === 45, null, { timeout: 10000 });
     const clearedRows = await page.locator('tbody tr').count();
-    result.checks.statusCards[status] = { filteredRows, clearedRows, selectedStatus };
+    result.checks.statusCards[status] = { ...displayed, filteredRows, clearedRows, selectedStatus };
   }
 
   await page.goto(`${base}?catalog-test=${encodeURIComponent(commit)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
