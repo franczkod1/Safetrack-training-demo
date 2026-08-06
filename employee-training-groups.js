@@ -13,6 +13,16 @@
     de: 'Deutsch', pl: 'Polski', ru: 'Русский', ar: 'العربية',
     tr: 'Türkçe', hu: 'Magyar', ro: 'Română'
   };
+  const CONFIRMATION_TEXT = {
+    de: ['Bestätigung der Unterweisung', 'Ich bestätige, dass ich diese Unterweisung erhalten, verstanden und Gelegenheit für Rückfragen hatte.'],
+    pl: ['Potwierdzenie instruktażu', 'Potwierdzam, że odbyłem(-am) ten instruktaż, zrozumiałem(-am) jego treść i miałem(-am) możliwość zadawania pytań.'],
+    ru: ['Подтверждение инструктажа', 'Я подтверждаю, что прошёл(прошла) этот инструктаж, понял(а) его содержание и имел(а) возможность задать вопросы.'],
+    ar: ['تأكيد التدريب', 'أؤكد أنني تلقيت هذا التدريب وفهمت محتواه وأتيحت لي فرصة طرح الأسئلة.'],
+    tr: ['Eğitim onayı', 'Bu eğitimi aldığımı, içeriğini anladığımı ve soru sorma fırsatı bulduğumu onaylıyorum.'],
+    hu: ['Az oktatás megerősítése', 'Igazolom, hogy az oktatást megkaptam, megértettem, és lehetőségem volt kérdéseket feltenni.'],
+    ro: ['Confirmarea instruirii', 'Confirm că am primit această instruire, am înțeles conținutul și am avut posibilitatea să adresez întrebări.']
+  };
+  const QUESTION_HEADING = { de: 'Wissensfragen', pl: 'Pytania kontrolne', ru: 'Контрольные вопросы', ar: 'أسئلة المعرفة', tr: 'Bilgi soruları', hu: 'Ellenőrző kérdések', ro: 'Întrebări de verificare' };
 
   let currentEmployeeId = '';
   let selected = new Set();
@@ -270,12 +280,14 @@
   function confirmationMarkup(employee, item) {
     const employeeLanguage = employee[5] || 'de';
     const employeeTitle = trainingTitle(item.training, employeeLanguage);
+    const confirmation = CONFIRMATION_TEXT[employeeLanguage] || CONFIRMATION_TEXT.de;
     return `<section class="st-print-confirmation-page">
       ${employeeHeader(employee, item)}
       <div class="st-confirmation-copy" dir="${employeeLanguage === 'ar' ? 'rtl' : 'ltr'}">
-        <h2>Bestätigung der Unterweisung</h2>
-        <p>Ich bestätige, dass ich die Unterweisung „${escapeHtml(employeeTitle)}“ erhalten, verstanden und Gelegenheit für Rückfragen hatte.</p>
-        ${employeeLanguage === 'de' ? '' : `<p class="st-german-reference"><strong>Deutsche Referenz:</strong> Ich bestätige, dass die Unterweisung vollständig durchgeführt und Verständnisfragen geklärt wurden.</p>`}
+        <h2>${escapeHtml(confirmation[0])}</h2>
+        <p><strong>${escapeHtml(employeeTitle)}</strong></p>
+        <p>${escapeHtml(confirmation[1])}</p>
+        ${employeeLanguage === 'de' ? '' : `<p class="st-german-reference" dir="ltr"><strong>Deutsche Referenz:</strong> Ich bestätige, dass diese Unterweisung vollständig durchgeführt, verstanden und Gelegenheit für Rückfragen gegeben wurde.</p>`}
       </div>
       ${signatureMarkup()}
     </section>`;
@@ -290,7 +302,7 @@
   function questionsMarkup(training, language) {
     const questions = training.questions?.[language] || [];
     if (!Array.isArray(questions) || !questions.length) return '';
-    return `<section class="st-print-questions"><h3>Wissensfragen</h3>${questions.map((question, index) => `<div class="st-print-question">
+    return `<section class="st-print-questions"><h3>${escapeHtml(QUESTION_HEADING[language] || QUESTION_HEADING.de)}</h3>${questions.map((question, index) => `<div class="st-print-question">
       <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
       <ul>${(question.o || []).map(option => `<li>□ ${escapeHtml(option)}</li>`).join('')}</ul>
     </div>`).join('')}</section>`;
