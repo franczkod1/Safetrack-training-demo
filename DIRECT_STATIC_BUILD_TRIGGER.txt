@@ -1,0 +1,2 @@
+Build requested: 2026-08-06T11:41:00+02:00
+Purpose: replace the Base64/GZIP browser loader with direct index.html, styles.css and app.js files.
