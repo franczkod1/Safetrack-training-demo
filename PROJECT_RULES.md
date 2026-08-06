@@ -28,3 +28,12 @@
 17. Employee training profiles must derive their groups exclusively from the categories already defined in the Unterweisungen catalog; a second independent category system is prohibited.
 18. Employee-profile categories and their trainings must be sorted by worst status first, then by the earliest due date.
 19. Category-level selection must expose checked, unchecked and mixed states and must be verified together with individual multi-selection, batch start and print output.
+
+## Mandatory error-learning protocol
+
+1. Every confirmed mistake must be recorded in an incident or lessons-learned file before the affected task is closed.
+2. Each record must contain the observed symptom, root cause, incorrect assumption, corrective action and one automated or procedural prevention check.
+3. Before changing an area that has a prior incident, review the relevant incident and verify that its prevention check is present in the new implementation.
+4. Repeating a previously documented root cause is a release-blocking regression.
+5. A deployment may only be described as published after the deployment action itself succeeds and the exact public artifact passes the browser test. Waiting for an external deployment is not equivalent to deploying it.
+6. Workflow-generated commits must never be relied upon to trigger GitHub Pages, because commits made with the repository `GITHUB_TOKEN` do not trigger a Pages build.
