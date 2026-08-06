@@ -1,0 +1,50 @@
+name: Build direct SafeTrack static site
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'catalog50-v1/**'
+      - '.github/scripts/build-direct-static.py'
+      - '.github/workflows/build-direct-static.yml'
+      - 'DIRECT_STATIC_BUILD_TRIGGER.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: safetrack-direct-static-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build normal static files
+        run: python3 .github/scripts/build-direct-static.py
+
+      - name: Validate generated files
+        run: |
+          test -s index.html
+          test -s styles.css
+          test -s app.js
+          test -s STATIC_BUILD.json
+          ! grep -q 'DecompressionStream' index.html
+          ! grep -q 'catalog50-v1/part' index.html
+          ! grep -q 'atob(' index.html
+          grep -q 'styles.css' index.html
+          grep -q 'app.js' index.html
+
+      - name: Commit direct static site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html styles.css app.js STATIC_BUILD.json
+          git commit -m "Publish direct static SafeTrack site [skip ci]" || exit 0
+          git push
