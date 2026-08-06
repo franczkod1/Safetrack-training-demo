@@ -81,8 +81,9 @@ try {
     result.checks.statusCards[status] = { displayed, rows, selectedFilter };
   }
 
-  await page.locator('[data-page="employees"]').click();
+  await page.locator('[data-a="clear"]').click();
   await page.waitForSelector('.st-v10-job-groups');
+  await page.waitForFunction(() => document.querySelectorAll('.st-v10-employee-row').length === 45);
   const jobGroups = await page.evaluate(() => {
     const usedJobs = new Set(window.SafeTrackSeed.employees.map(employee => employee[3]));
     const groups = [...document.querySelectorAll('.st-v10-job-group')];
