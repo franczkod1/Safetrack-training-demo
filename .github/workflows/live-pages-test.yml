@@ -31,7 +31,7 @@ jobs:
       - name: Validate direct static source files
         run: |
           set -o pipefail
-          node .github/scripts/validate-static-v10.mjs 2>&1 | tee STATIC_VALIDATION_RESULT.txt
+          node .github/scripts/validate-static-v11.mjs 2>&1 | tee STATIC_VALIDATION_RESULT.txt
 
       - name: Build exact GitHub Pages artifact
         run: |
@@ -42,7 +42,6 @@ jobs:
             index.html
             styles.css
             employee-training-groups.css
-            safetrack-v10.css
             seed-base.js
             trainings-a.js
             trainings-b.js
@@ -50,7 +49,6 @@ jobs:
             status-fixture.js
             app.js
             employee-training-groups.js
-            safetrack-v10.js
           )
           for file in "${files[@]}"; do
             test -s "${file}"
@@ -116,7 +114,7 @@ jobs:
         continue-on-error: true
         env:
           SAFETRACK_DEPLOYED_URL: ${{ needs.deploy.outputs.page_url }}
-        run: node .github/scripts/live-test-v10.mjs
+        run: node .github/scripts/live-test-v11.mjs
 
       - name: Save public test diagnostics
         if: always()
