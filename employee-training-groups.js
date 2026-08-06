@@ -22,7 +22,11 @@
     hu: ['Az oktatás megerősítése', 'Igazolom, hogy az oktatást megkaptam, megértettem, és lehetőségem volt kérdéseket feltenni.'],
     ro: ['Confirmarea instruirii', 'Confirm că am primit această instruire, am înțeles conținutul și am avut posibilitatea să adresez întrebări.']
   };
-  const QUESTION_HEADING = { de: 'Wissensfragen', pl: 'Pytania kontrolne', ru: 'Контрольные вопросы', ar: 'أسئلة المعرفة', tr: 'Bilgi soruları', hu: 'Ellenőrző kérdések', ro: 'Întrebări de verificare' };
+  const QUESTION_HEADING = {
+    de: 'Wissensfragen', pl: 'Pytania kontrolne', ru: 'Контрольные вопросы',
+    ar: 'أسئلة المعرفة', tr: 'Bilgi soruları', hu: 'Ellenőrző kérdések',
+    ro: 'Întrebări de verificare'
+  };
 
   let currentEmployeeId = '';
   let selected = new Set();
@@ -34,8 +38,6 @@
   })[character]);
   const today = () => new Date(new Date().setHours(0, 0, 0, 0));
   const addDays = days => new Date(today().getTime() + days * 864e5).toISOString().slice(0, 10);
-  const dateLabel = value => new Intl.DateTimeFormat(api.state.lang || 'de', { dateStyle: 'medium' })
-    .format(new Date(`${value}T12:00:00`));
   const classify = days => days <= 5 ? 'critical' : days <= 30 ? 'soon' : 'valid';
   const required = (employee, training) => training.active !== false && Array.isArray(training.roles) &&
     training.roles.some(role => role === 'all' || role === employee[4]);
@@ -43,6 +45,9 @@
     seed.categories?.[category]?.[language] || seed.categories?.[category]?.de || category;
   const trainingTitle = (training, language = api.state.lang || 'de') =>
     training.title?.[language] || training.title?.de || training.id;
+  const formatDate = (value, language = api.state.lang || 'de') => value
+    ? new Intl.DateTimeFormat(language, { dateStyle: 'medium' }).format(new Date(`${value}T12:00:00`))
+    : '';
 
   function readRecords() {
     try {
@@ -61,8 +66,19 @@
     return api.catalog.filter(training => required(employee, training)).map((training, trainingIndex) => {
       const record = records.find(item => item.employeeId === employee[1] && item.trainingId === training.id);
       const dueDays = record ? training.months * 30 : OFFSETS[(employeeIndex * 7 + trainingIndex * 5) % OFFSETS.length];
-      return { training, dueDays, dueDate: addDays(dueDays), status: classify(dueDays), record };
+      return {
+        training,
+        dueDays,
+        dueDate: addDays(dueDays),
+        status: classify(dueDays),
+        record
+      };
     });
+  }
+
+  function overallStatusForEmployee(employeeId) {
+    const statuses = assignments(employeeId).map(item => item.status);
+    return statuses.includes('critical') ? 'critical' : statuses.includes('soon') ? 'soon' : 'valid';
   }
 
   function groupsFor(employeeId) {
@@ -74,9 +90,15 @@
     });
 
     return [...byCategory.entries()].map(([category, items]) => {
-      items.sort((left, right) => RANK[left.status] - RANK[right.status] || left.dueDays - right.dueDays ||
-        trainingTitle(left.training).localeCompare(trainingTitle(right.training), api.state.lang || 'de'));
-      const status = items.reduce((worst, item) => RANK[item.status] < RANK[worst] ? item.status : worst, 'valid');
+      items.sort((left, right) =>
+        RANK[left.status] - RANK[right.status] ||
+        left.dueDays - right.dueDays ||
+        trainingTitle(left.training).localeCompare(trainingTitle(right.training), api.state.lang || 'de')
+      );
+      const status = items.reduce(
+        (worst, item) => RANK[item.status] < RANK[worst] ? item.status : worst,
+        'valid'
+      );
       const counts = { critical: 0, soon: 0, valid: 0 };
       items.forEach(item => counts[item.status] += 1);
       return {
@@ -87,40 +109,40 @@
         earliestDue: Math.min(...items.map(item => item.dueDays)),
         items
       };
-    }).sort((left, right) => RANK[left.status] - RANK[right.status] || left.earliestDue - right.earliestDue ||
-      left.name.localeCompare(right.name, api.state.lang || 'de'));
+    }).sort((left, right) =>
+      RANK[left.status] - RANK[right.status] ||
+      left.earliestDue - right.earliestDue ||
+      left.name.localeCompare(right.name, api.state.lang || 'de')
+    );
   }
 
   function statusMarkup(status) {
     return `<span class="st-category-status st-${status}"><span class="st-status-icon" aria-hidden="true"></span>${LABEL[status]}</span>`;
   }
 
-  function overallStatus(items) {
-    const statuses = items.map(item => item.status);
-    return statuses.includes('critical') ? 'critical' : statuses.includes('soon') ? 'soon' : 'valid';
-  }
-
-  function categoryMarkup(group, groupIndex) {
-    const groupId = `st-category-${groupIndex}`;
-    const open = group.status !== 'valid';
-    return `<section class="st-category-group" data-category="${escapeHtml(group.category)}" data-status="${group.status}" role="group" aria-labelledby="${groupId}-label">
+  function categoryMarkup(group, index) {
+    const bodyId = `st-category-${index}-body`;
+    return `<section class="st-category-group" data-category="${escapeHtml(group.category)}" data-status="${group.status}">
       <div class="st-category-head">
         <label class="st-category-check">
-          <input type="checkbox" data-st-category="${escapeHtml(group.category)}" aria-label="Alle Unterweisungen in ${escapeHtml(group.name)} auswählen">
-          <span id="${groupId}-label">${escapeHtml(group.name)}</span>
+          <input type="checkbox" data-st-category="${escapeHtml(group.category)}"
+            aria-label="Alle Unterweisungen in ${escapeHtml(group.name)} auswählen">
+          <span>${escapeHtml(group.name)}</span>
         </label>
-        <button type="button" class="st-category-toggle" data-st-action="toggle-category" data-category="${escapeHtml(group.category)}" aria-expanded="${open}" aria-controls="${groupId}-body">
+        <button type="button" class="st-category-toggle" data-st-action="toggle-category"
+          aria-expanded="false" aria-controls="${bodyId}">
           ${statusMarkup(group.status)}
           <span class="st-category-counts">${group.counts.critical} kritisch · ${group.counts.soon} fällig · ${group.counts.valid} gültig</span>
           <span class="st-chevron" aria-hidden="true"></span>
         </button>
       </div>
-      <div class="st-category-body" id="${groupId}-body" ${open ? '' : 'hidden'}>
+      <div class="st-category-body" id="${bodyId}" hidden>
         ${group.items.map(item => `<label class="st-training-choice" data-status="${item.status}">
-          <input type="checkbox" data-st-training="${escapeHtml(item.training.id)}" ${selected.has(item.training.id) ? 'checked' : ''}>
+          <input type="checkbox" data-st-training="${escapeHtml(item.training.id)}"
+            ${selected.has(item.training.id) ? 'checked' : ''}>
           <span class="st-training-copy">
             <strong>${escapeHtml(trainingTitle(item.training))}</strong>
-            <small>v${escapeHtml(item.training.version)} · ${dateLabel(item.dueDate)}</small>
+            <small>v${escapeHtml(item.training.version)} · ${formatDate(item.dueDate)}</small>
           </span>
           ${statusMarkup(item.status)}
         </label>`).join('')}
@@ -147,8 +169,10 @@
 
     const groups = groupsFor(employeeId);
     const allItems = groups.flatMap(group => group.items);
+    const overall = overallStatusForEmployee(employeeId);
+
     body.innerHTML = `<div class="st-employee-actions">
-      <div class="st-employee-status">${statusMarkup(overallStatus(allItems))}<span>${allItems.length} zugeordnete Unterweisungen</span></div>
+      <div class="st-employee-status">${statusMarkup(overall)}<span>${allItems.length} zugeordnete Unterweisungen</span></div>
       <div class="st-quick-actions">
         <button type="button" class="btn small" data-st-action="select-critical">Alle kritischen auswählen</button>
         <button type="button" class="btn small" data-st-action="select-soon">Alle in 6–30 Tagen fälligen auswählen</button>
@@ -169,9 +193,83 @@
     enhancing = false;
   }
 
-  function visibleTrainingIds(category) {
-    return [...document.querySelectorAll(`.st-category-group[data-category="${CSS.escape(category)}"] [data-st-training]`)]
-      .map(input => input.dataset.stTraining);
+  function employeeJobGroups() {
+    const filter = document.querySelector('#emp')?.value || api.state.emp || '';
+    const entries = seed.employees
+      .map(employee => ({ employee, status: overallStatusForEmployee(employee[1]) }))
+      .filter(entry => !filter || entry.status === filter);
+
+    const grouped = new Map();
+    entries.forEach(entry => {
+      const job = entry.employee[3] || 'Ohne Tätigkeit';
+      if (!grouped.has(job)) grouped.set(job, []);
+      grouped.get(job).push(entry);
+    });
+
+    return [...grouped.entries()].map(([job, people]) => {
+      people.sort((left, right) =>
+        left.employee[0].localeCompare(right.employee[0], api.state.lang || 'de')
+      );
+      const counts = { critical: 0, soon: 0, valid: 0 };
+      people.forEach(person => counts[person.status] += 1);
+      const worst = people.reduce(
+        (status, person) => RANK[person.status] < RANK[status] ? person.status : status,
+        'valid'
+      );
+      return { job, people, counts, worst };
+    }).sort((left, right) =>
+      left.job.localeCompare(right.job, api.state.lang || 'de')
+    );
+  }
+
+  function employeeJobMarkup(group, index) {
+    const bodyId = `st-job-${index}-body`;
+    return `<section class="st-job-group" data-job="${escapeHtml(group.job)}">
+      <button type="button" class="st-job-toggle" data-st-action="toggle-job"
+        aria-expanded="false" aria-controls="${bodyId}">
+        <span class="st-job-title">
+          <strong>${escapeHtml(group.job)}</strong>
+          <small>${group.people.length} Mitarbeitende</small>
+        </span>
+        <span class="st-job-summary">
+          ${statusMarkup(group.worst)}
+          <span>${group.counts.critical} kritisch · ${group.counts.soon} fällig · ${group.counts.valid} gültig</span>
+          <span class="st-chevron" aria-hidden="true"></span>
+        </span>
+      </button>
+      <div class="st-job-body" id="${bodyId}" hidden>
+        ${group.people.map(({ employee, status }) => `<button type="button" class="st-employee-row"
+          data-a="employee" data-id="${escapeHtml(employee[1])}">
+          <span><strong>${escapeHtml(employee[0])}</strong><small>${escapeHtml(employee[1])} · ${escapeHtml(employee[2])}</small></span>
+          ${statusMarkup(status)}
+        </button>`).join('')}
+      </div>
+    </section>`;
+  }
+
+  function enhanceEmployeesPage() {
+    if (api.state.page !== 'employees') return;
+    const card = document.querySelector('.table-card');
+    const table = card?.querySelector('table');
+    if (!card || !table || card.dataset.stJobGroups === 'true') return;
+
+    table.classList.add('st-source-table');
+    const groups = employeeJobGroups();
+    const container = document.createElement('div');
+    container.className = 'st-job-groups';
+    container.innerHTML = groups.length
+      ? groups.map(employeeJobMarkup).join('')
+      : '<div class="empty">Keine Mitarbeitenden für diesen Status.</div>';
+    table.after(container);
+    card.dataset.stJobGroups = 'true';
+  }
+
+  function categoryTrainingIds(category) {
+    const group = [...document.querySelectorAll('.st-category-group')]
+      .find(element => element.dataset.category === category);
+    return group
+      ? [...group.querySelectorAll('[data-st-training]')].map(input => input.dataset.stTraining)
+      : [];
   }
 
   function syncSelectionUi() {
@@ -179,16 +277,24 @@
       input.checked = selected.has(input.dataset.stTraining);
     });
     document.querySelectorAll('[data-st-category]').forEach(input => {
-      const ids = visibleTrainingIds(input.dataset.stCategory);
+      const ids = categoryTrainingIds(input.dataset.stCategory);
       const count = ids.filter(id => selected.has(id)).length;
       input.checked = ids.length > 0 && count === ids.length;
       input.indeterminate = count > 0 && count < ids.length;
       input.setAttribute('aria-checked', input.indeterminate ? 'mixed' : String(input.checked));
     });
-    document.querySelectorAll('[data-st-count]').forEach(node => node.textContent = String(selected.size));
+    document.querySelectorAll('[data-st-count]').forEach(node => {
+      node.textContent = String(selected.size);
+    });
     document.querySelectorAll('[data-st-action="print"], [data-st-action="start"]').forEach(button => {
       button.disabled = selected.size === 0;
     });
+  }
+
+  function selectedAssignments() {
+    return groupsFor(currentEmployeeId)
+      .flatMap(group => group.items)
+      .filter(item => selected.has(item.training.id));
   }
 
   function showToast(message) {
@@ -197,11 +303,6 @@
     toast.textContent = message;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 1800);
-  }
-
-  function selectedAssignments() {
-    return groupsFor(currentEmployeeId).flatMap(group => group.items)
-      .filter(item => selected.has(item.training.id));
   }
 
   function startBatch() {
@@ -234,7 +335,8 @@
     closePrintOptions();
     const overlay = document.createElement('div');
     overlay.className = 'st-print-options-bg';
-    overlay.innerHTML = `<section class="st-print-options" role="dialog" aria-modal="true" aria-labelledby="st-print-options-title">
+    overlay.innerHTML = `<section class="st-print-options" role="dialog" aria-modal="true"
+      aria-labelledby="st-print-options-title">
       <div class="st-print-options-head">
         <div><h3 id="st-print-options-title">Druckumfang auswählen</h3><p>${selected.size} Unterweisung(en) ausgewählt</p></div>
         <button type="button" class="close" data-st-action="close-print-options">Schließen</button>
@@ -242,11 +344,11 @@
       <div class="st-print-option-grid">
         <button type="button" class="st-print-option" data-st-print-mode="confirmation">
           <strong>Nur Bestätigung und Unterschriften</strong>
-          <span>Je Unterweisung eine eigene A4-Seite mit zwei getrennten Unterschriften.</span>
+          <span>Je Unterweisung eine kompakte A4-Seite mit getrennten Unterschriften.</span>
         </button>
         <button type="button" class="st-print-option" data-st-print-mode="full">
           <strong>Unterweisung mit Bestätigungsseite</strong>
-          <span>Vollständiger Inhalt in der Sprache der beschäftigten Person, deutsche Referenz und separate Bestätigungsseite.</span>
+          <span>Vollständiger Inhalt in der Sprache der beschäftigten Person, deutsche Referenz und eigene Bestätigungsseite.</span>
         </button>
       </div>
     </section>`;
@@ -254,58 +356,64 @@
     overlay.querySelector('[data-st-print-mode]')?.focus();
   }
 
-  function signatureMarkup() {
-    return `<section class="st-print-signatures">
-      <div class="st-signature-block"><span>Datum</span><div class="st-signature-line"></div></div>
-      <div class="st-signature-block"><span>Name der unterweisenden / beaufsichtigenden Person</span><div class="st-signature-line"></div></div>
-      <div class="st-signature-block"><span>Unterschrift Mitarbeitende:r</span><div class="st-signature-line"></div></div>
-      <div class="st-signature-block"><span>Unterschrift unterweisende / beaufsichtigende Person</span><div class="st-signature-line"></div></div>
-    </section>`;
-  }
-
-  function employeeHeader(employee, item) {
+  function printHeader(employee, item) {
     return `<header class="st-print-header">
-      <div><h1>${escapeHtml(trainingTitle(item.training, 'de'))}</h1><p>${escapeHtml(categoryName(item.training.category, 'de'))}</p></div>
+      <div class="st-print-title">
+        <h1>${escapeHtml(trainingTitle(item.training, 'de'))}</h1>
+        <p>${escapeHtml(categoryName(item.training.category, 'de'))}</p>
+      </div>
       <dl>
         <div><dt>Mitarbeitende Person</dt><dd>${escapeHtml(employee[0])}</dd></div>
         <div><dt>Personalnummer</dt><dd>${escapeHtml(employee[1])}</dd></div>
         <div><dt>Bereich / Tätigkeit</dt><dd>${escapeHtml(employee[2])} · ${escapeHtml(employee[3])}</dd></div>
         <div><dt>Version</dt><dd>v${escapeHtml(item.training.version)}</dd></div>
-        <div><dt>Fällig</dt><dd>${dateLabel(item.dueDate)}</dd></div>
-        <div><dt>Status</dt><dd>${LABEL[item.status]}</dd></div>
       </dl>
     </header>`;
   }
 
-  function confirmationMarkup(employee, item) {
-    const employeeLanguage = employee[5] || 'de';
-    const employeeTitle = trainingTitle(item.training, employeeLanguage);
-    const confirmation = CONFIRMATION_TEXT[employeeLanguage] || CONFIRMATION_TEXT.de;
-    return `<section class="st-print-confirmation-page">
-      ${employeeHeader(employee, item)}
-      <div class="st-confirmation-copy" dir="${employeeLanguage === 'ar' ? 'rtl' : 'ltr'}">
+  function confirmationFields(item) {
+    const completedDate = item.record?.date ? formatDate(item.record.date, 'de') : '';
+    return `<section class="st-confirmation-fields">
+      <div class="st-form-field"><span>Durchgeführt am</span><strong>${completedDate ? escapeHtml(completedDate) : '&nbsp;'}</strong></div>
+      <div class="st-form-field"><span>Personalnummer der unterweisenden / beaufsichtigenden Person</span><strong>&nbsp;</strong></div>
+      <div class="st-form-field st-form-field-wide"><span>Name der unterweisenden / beaufsichtigenden Person</span><strong>&nbsp;</strong></div>
+      <div class="st-form-field"><span>Unterschrift Mitarbeitende:r</span><strong>&nbsp;</strong></div>
+      <div class="st-form-field"><span>Unterschrift unterweisende / beaufsichtigende Person</span><strong>&nbsp;</strong></div>
+    </section>`;
+  }
+
+  function confirmationPage(employee, item) {
+    const language = employee[5] || 'de';
+    const confirmation = CONFIRMATION_TEXT[language] || CONFIRMATION_TEXT.de;
+    return `<section class="st-confirmation-page">
+      ${printHeader(employee, item)}
+      <div class="st-confirmation-copy" dir="${language === 'ar' ? 'rtl' : 'ltr'}">
         <h2>${escapeHtml(confirmation[0])}</h2>
-        <p><strong>${escapeHtml(employeeTitle)}</strong></p>
+        <p><strong>${escapeHtml(trainingTitle(item.training, language))}</strong></p>
         <p>${escapeHtml(confirmation[1])}</p>
-        ${employeeLanguage === 'de' ? '' : `<p class="st-german-reference" dir="ltr"><strong>Deutsche Referenz:</strong> Ich bestätige, dass diese Unterweisung vollständig durchgeführt, verstanden und Gelegenheit für Rückfragen gegeben wurde.</p>`}
+        ${language === 'de' ? '' : `<p class="st-german-reference" dir="ltr"><strong>Deutsche Referenz:</strong> Ich bestätige, dass diese Unterweisung vollständig durchgeführt, verstanden und Gelegenheit für Rückfragen gegeben wurde.</p>`}
       </div>
-      ${signatureMarkup()}
+      ${confirmationFields(item)}
     </section>`;
   }
 
   function slideMarkup(slide) {
     if (!Array.isArray(slide)) return '';
     const [heading, points] = slide;
-    return `<section class="st-print-slide"><h3>${escapeHtml(heading)}</h3><ul>${(Array.isArray(points) ? points : []).map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul></section>`;
+    return `<section class="st-print-slide"><h3>${escapeHtml(heading)}</h3><ul>${
+      (Array.isArray(points) ? points : []).map(point => `<li>${escapeHtml(point)}</li>`).join('')
+    }</ul></section>`;
   }
 
   function questionsMarkup(training, language) {
     const questions = training.questions?.[language] || [];
     if (!Array.isArray(questions) || !questions.length) return '';
-    return `<section class="st-print-questions"><h3>${escapeHtml(QUESTION_HEADING[language] || QUESTION_HEADING.de)}</h3>${questions.map((question, index) => `<div class="st-print-question">
-      <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
-      <ul>${(question.o || []).map(option => `<li>□ ${escapeHtml(option)}</li>`).join('')}</ul>
-    </div>`).join('')}</section>`;
+    return `<section class="st-print-questions"><h3>${escapeHtml(QUESTION_HEADING[language] || QUESTION_HEADING.de)}</h3>${
+      questions.map((question, index) => `<div class="st-print-question">
+        <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+        <ul>${(question.o || []).map(option => `<li>□ ${escapeHtml(option)}</li>`).join('')}</ul>
+      </div>`).join('')
+    }</section>`;
   }
 
   function languageContent(training, language, heading) {
@@ -320,14 +428,12 @@
     </section>`;
   }
 
-  function fullTrainingMarkup(employee, item) {
+  function trainingContent(employee, item) {
     const language = employee[5] || 'de';
-    const employeeContent = languageContent(item.training, language, `Unterweisung · ${LANGUAGE_NAME[language] || language.toUpperCase()}`);
-    const germanContent = language === 'de' ? '' : languageContent(item.training, 'de', 'Deutsche Fassung für die unterweisende Person');
-    return `<section class="st-print-training-content">
-      ${employeeHeader(employee, item)}
-      ${employeeContent}
-      ${germanContent}
+    return `<section class="st-training-content">
+      ${printHeader(employee, item)}
+      ${languageContent(item.training, language, `Unterweisung · ${LANGUAGE_NAME[language] || language.toUpperCase()}`)}
+      ${language === 'de' ? '' : languageContent(item.training, 'de', 'Deutsche Fassung für die unterweisende Person')}
     </section>`;
   }
 
@@ -339,12 +445,14 @@
 
     closePrintOptions();
     document.querySelector('#st-print-sheet')?.remove();
+
     const sheet = document.createElement('section');
     sheet.id = 'st-print-sheet';
     sheet.dataset.printMode = mode;
+    sheet.dataset.printVersion = 'v11';
     sheet.innerHTML = items.map(item => `<article class="st-print-document" data-training-id="${escapeHtml(item.training.id)}">
-      ${mode === 'full' ? fullTrainingMarkup(employee, item) : ''}
-      ${confirmationMarkup(employee, item)}
+      ${mode === 'full' ? trainingContent(employee, item) : ''}
+      ${confirmationPage(employee, item)}
     </article>`).join('');
     document.body.appendChild(sheet);
     document.body.classList.add('st-printing');
@@ -366,9 +474,10 @@
       syncSelectionUi();
       return;
     }
+
     const category = event.target.closest?.('[data-st-category]');
     if (category) {
-      visibleTrainingIds(category.dataset.stCategory).forEach(id => {
+      categoryTrainingIds(category.dataset.stCategory).forEach(id => {
         category.checked ? selected.add(id) : selected.delete(id);
       });
       syncSelectionUi();
@@ -378,6 +487,7 @@
   document.addEventListener('click', event => {
     const printMode = event.target.closest?.('[data-st-print-mode]');
     if (printMode) {
+      event.preventDefault();
       printSelection(printMode.dataset.stPrintMode);
       return;
     }
@@ -385,7 +495,8 @@
     const action = event.target.closest?.('[data-st-action]');
     if (!action) return;
     const name = action.dataset.stAction;
-    if (name === 'toggle-category') {
+
+    if (name === 'toggle-category' || name === 'toggle-job') {
       const bodyId = action.getAttribute('aria-controls');
       const body = bodyId ? document.getElementById(bodyId) : null;
       const expanded = action.getAttribute('aria-expanded') === 'true';
@@ -393,7 +504,8 @@
       if (body) body.hidden = expanded;
     } else if (name === 'select-critical' || name === 'select-soon') {
       const status = name === 'select-critical' ? 'critical' : 'soon';
-      assignments(currentEmployeeId).filter(item => item.status === status)
+      assignments(currentEmployeeId)
+        .filter(item => item.status === status)
         .forEach(item => selected.add(item.training.id));
       syncSelectionUi();
     } else if (name === 'clear') {
@@ -429,13 +541,19 @@
     if (event.key === 'Escape' && document.querySelector('.st-print-options-bg')) closePrintOptions();
   });
 
-  const observer = new MutationObserver(enhanceEmployeeModal);
+  function enhance() {
+    enhanceEmployeeModal();
+    enhanceEmployeesPage();
+  }
+
+  const observer = new MutationObserver(enhance);
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  enhanceEmployeeModal();
+  enhance();
 
   window.__SafeTrackEmployeeGroups = {
     groupsFor,
     assignments,
+    employeeJobGroups,
     getSelected: () => [...selected],
     select(ids) {
       selected = new Set(ids);
