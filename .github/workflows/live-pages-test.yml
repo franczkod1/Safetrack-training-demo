@@ -56,12 +56,14 @@ jobs:
           files=(
             index.html
             styles.css
+            employee-training-groups.css
             seed-base.js
             trainings-a.js
             trainings-b.js
             data-final.js
             status-fixture.js
             app.js
+            employee-training-groups.js
           )
 
           for attempt in $(seq 1 36); do
@@ -125,7 +127,7 @@ jobs:
               testedAt: new Date().toISOString(),
               commit: process.env.TEST_COMMIT,
               url: `https://franczkod1.github.io/Safetrack-training-demo/?live-test=${process.env.TEST_COMMIT}`,
-              expectedBuild: 'direct-static-v7',
+              expectedBuild: 'direct-static-v8',
               passed: false,
               checks: {
                 staticValidationOutcome: process.env.STATIC_OUTCOME || 'not-run',
