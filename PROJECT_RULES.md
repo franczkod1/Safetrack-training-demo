@@ -67,6 +67,13 @@
 45. The system print subtree must be a fresh, non-fixed, non-scrollable direct child of `body`; the on-screen preview overlay must never be reused as the system print root.
 46. The prepared system print root must contain exactly one independent print document per selected training. Its document count must be checked for 1, 2 and 5 selected trainings in confirmation-only and full-training modes.
 47. A release that changes printing cannot be accepted solely from an in-app preview. It requires Chromium PDF validation plus final iPhone/Safari system print-preview acceptance when available.
+48. The group-training workflow must allow one or more trainings to be selected before employees are assigned.
+49. The group employee picker may offer only employees for whom at least one selected training is actually applicable. Each training-specific confirmation list may contain only selected employees to whom that specific training applies.
+50. Group assignment must provide separate bulk controls for critical employees and employees due in 6–30 days, calculated from the selected trainings, while still allowing every employee selection to be adjusted individually.
+51. Group employee lists must support sorting by language so that employees with the same language appear consecutively under a visible language heading; name and personnel-number sorting must remain available.
+52. Group Schulungsbestätigung output must generate one independent participant-list document per selected training. Each list must show participant name, personnel number, language and signature field, together with training ID, training version, completion date and trainer/supervisor name, personnel number and signature field.
+53. On mobile, the group employee picker must remain within the viewport, only the employee-list region may scroll, and the primary continuation action must remain visible. Confirmation metadata entry must be a dedicated step rather than being appended below an unbounded employee list.
+54. Code executed from a DOM mutation observer must be demonstrably idempotent. Re-running an enhancement function without application-state changes must create zero new child-list mutations; otherwise event-driven enhancement must be used instead.
 
 ## Mandatory error-learning protocol
 
