@@ -22,7 +22,7 @@ const AREA=i=>i<40?'Produktion':i<50?'Reinigung':i<75?'Logistik':i<85?'Instandha
 const START={Produktion:0,Reinigung:40,Logistik:50,Instandhaltung:75,Qualitätskontrolle:85};
 s.employees=Array.from({length:100},(_,i)=>{
  const l=L[i%7],p=P[l],k=Math.floor(i/7),area=AREA(i),jobs=A[area],local=i-START[area],job=jobs[local%jobs.length];
- return[`${p[0][k%8]} ${p[1][(Math.floor(k/8)+i%7)%8]}`,`P-${2001+i}`,area,job[0],job[1],l];
+ return[`${p[0][k%8]} ${p[1][(Math.floor(k/8)+i%7)%8]}`,`PNr-${2001+i}`,area,job[0],job[1],l];
 });
 const D={production:'Produktionsmitarbeitende',machine:'Maschinen- und Anlagenführung',packaging:'Verpackung und Linienbetrieb',cleaning:'Reinigung und Hygiene',logistics:'Lager und Kommissionierung',forklift:'Stapler und innerbetrieblicher Transport',maintenance:'Instandhaltung',quality:'Qualitätskontrolle',leader:'Teamkoordination Produktion'};
 Object.entries(D).forEach(([k,v])=>{if(s.roles?.[k])s.roles[k].de=v});
