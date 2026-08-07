@@ -1,0 +1,17 @@
+/* SafeTrack v0.17: five-area employee model and iOS-safe print handoff */
+.st-area-group[data-area="Reinigung"] .st-area-toggle{background:linear-gradient(180deg,rgba(236,250,245,.98),rgba(247,252,250,.94))}
+.st-print-preview-bg .st-print-sheet{display:block;width:min(210mm,100%);margin:0 auto;padding:10mm;background:#fff;color:#000;box-shadow:0 12px 36px rgba(20,40,80,.16);font-family:Arial,Helvetica,sans-serif;font-size:9pt}
+.st-print-preview-bg .st-print-document{border-bottom:1px dashed rgba(20,40,80,.25);padding-bottom:10mm;margin-bottom:10mm}
+.st-print-preview-bg .st-print-document:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+#st-system-print-root{display:none}
+@media(max-width:720px){.st-print-preview-bg .st-print-sheet{padding:7mm 5mm;box-shadow:none}}
+@media print{
+ body.st-printing>*{display:none!important}
+ body.st-printing>#st-system-print-root{display:block!important;position:static!important;inset:auto!important;width:auto!important;height:auto!important;overflow:visible!important;margin:0!important;padding:0!important;background:#fff!important;color:#000!important}
+ #st-system-print-root .st-print-sheet{display:block!important;width:auto!important;margin:0!important;padding:0!important;background:#fff!important;color:#000!important;font-family:Arial,Helvetica,sans-serif!important;font-size:9pt!important;overflow:visible!important}
+ #st-system-print-root .st-print-document{display:block!important;break-after:page!important;page-break-after:always!important;break-inside:auto!important;page-break-inside:auto!important}
+ #st-system-print-root .st-print-document:last-child{break-after:auto!important;page-break-after:auto!important}
+ #st-system-print-root .st-training-content{display:block!important;break-after:page!important;page-break-after:always!important}
+ #st-system-print-root .st-confirmation-page{display:block!important;break-inside:avoid-page!important;page-break-inside:avoid!important}
+ #st-system-print-root .st-print-header,#st-system-print-root .st-confirmation-copy,#st-system-print-root .st-confirmation-fields,#st-system-print-root .st-print-footer,#st-system-print-root .st-print-slide{visibility:visible!important;opacity:1!important;color:#000!important}
+}
