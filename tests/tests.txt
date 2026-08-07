@@ -24,17 +24,17 @@ Steps:
 
 Expected: The document detail shows its ST-DOC, training metadata and participants; the centrally saved print snapshot can be opened; and "Prüfen & abschließen" remains disabled because no automatically checked signed return has been uploaded.
 
-## Test 3 - Signed return is matched, reviewed, completed, and visible on the employee [full-pipeline]
+## Test 3 - Signed return is matched, reviewed, completed, and visible on the employee
 Viewport: desktop
 Covers: POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, POST /api/documents/:id/complete, GET /api/documents/:id/file-url, GET /api/employees/:pnr/completions, QR/OCR comparison, leader approval, completion assignment, employee profile document link
-Description: Runs the real v0.21 signed-return backend pipeline using the QA-only synthetic paper return. The QA helper is only visible when AppDeploy runs with its internal qa_ key and is absent in normal SafeTrack use.
+Description: Uses the QA-only helper to create a central test document quickly, then runs the real signed-return storage, OCR/QR, review, completion, retrieval, and employee-profile pipeline. The helper is absent in normal SafeTrack use.
 
 Steps:
-1. Create and print one group confirmation with one matching employee, note that employee's name and PNr., then choose "Druck bestätigt – Dokumente öffnen"
-2. In Documents choose "QA Rücklauf simulieren" and wait until the created document changes to "Prüfung durch Führungskraft erforderlich"; open it and inspect "Automatische Prüfung"
-3. Choose "Prüfen & abschließen", confirm the action, verify the document becomes green "Abgeschlossen – Mitarbeitenden zugeordnet", open the signed document, then open the noted employee profile and verify "Dokumentierte Abschlüsse" contains this ST-DOC with a "Dokument öffnen" action
+1. Open "Dokumente" and choose "QA Rücklauf simulieren"; wait until a document appears with status "Prüfung durch Führungskraft erforderlich"
+2. Open that document, note its participant name and PNr., inspect "Automatische Prüfung", choose "Prüfen & abschließen", and confirm the action
+3. Verify the document becomes green "Abgeschlossen – Mitarbeitenden zugeordnet", choose "Unterschriebenes Dokument öffnen", then find the noted employee by PNr. and verify the employee profile shows this ST-DOC under "Dokumentierte Abschlüsse" with "Dokument öffnen"
 
-Expected: The synthetic signed return passes through storage and real OCR/QR matching, requires leader approval, becomes green only after approval, the signed file is retrievable, the employee's training completion is synchronized, and the same signed ST-DOC is directly accessible from that employee profile.
+Expected: The QA return passes through real central storage and QR/OCR matching, requires leader approval, becomes green only after approval, the signed file is retrievable, the training completion is synchronized to the participant, and the same signed ST-DOC is accessible from the employee profile.
 
 ## Test 4 - Mobile multilingual and Documents UI remain responsive
 Viewport: mobile
