@@ -1,37 +1,49 @@
 # Tests
 
-## Test 1 - Mobile hierarchy navigation and valid checkmark [sanity]
-Viewport: mobile
-Covers: corrected Gültig checkmark, Menu plus Zurück in internal views, employee three-level hierarchy, mobile overflow prevention
-Description: Verifies the requested navigation and hierarchy UI on an iPhone-sized viewport.
-
-Steps:
-1. Open Übersicht and verify the Gültig card shows a normal checkmark rather than a downward chevron
-2. Open Mitarbeitende, expand Produktion and one Tätigkeit; verify Produktion has the darkest neutral surface, Tätigkeit a lighter neutral surface, and employee rows are light/white
-3. Open one employee profile and verify both "Menü" and "Zurück" are available at the top; verify there is no horizontal page scrolling
-
-Expected: The checkmark is oriented correctly, hierarchy depth is visually obvious, and mobile internal navigation exposes both Menu and Zurück without overflow.
-
-## Test 2 - Training catalog hierarchy remains clear
+## Test 1 - Documents is a normal app page and employee hierarchy is aligned [sanity]
 Viewport: desktop
-Covers: training catalog hierarchy, neutral depth surfaces, desktop regression
-Description: Quickly verifies the training catalog uses the same darker-heading/light-card hierarchy.
+Covers: full-page Documents workspace, upload control, employee hierarchy depth, fixed PNr column alignment, v0.24 version
+Description: Verifies the primary v0.24 navigation/UI changes without using OCR.
 
 Steps:
-1. Open Unterweisungen
-2. Verify a category/group heading has a stronger neutral background than the individual white training cards beneath it
-3. Verify the catalog remains readable and interactive
+1. Open Mitarbeitende, expand Produktion and Maschinen- und Anlagenführung, and verify Produktion is visibly darker than the Tätigkeit while employee rows are white/light; verify visible PNr-#### values share one vertical column regardless of status
+2. Open Menü and choose Dokumente; verify Dokumente appears as the normal main content page rather than a modal/popup and contains Dokumente hochladen and Erwartete Rückläufe
+3. Open Menü and verify SafeTrack v0.24 is shown; verify the page remains usable without horizontal overflow
 
-Expected: Training categories are visually stronger than individual training cards without changing the SafeTrack status semantics.
+Expected: Hierarchy depth is clear, PNr values are aligned, and Documents behaves as a normal SafeTrack page with v0.24 visible.
 
-## Test 3 - Internal Menu returns to main navigation and central Documents remains reachable
+## Test 2 - Uncertain page requires original-versus-return comparison
+Viewport: desktop
+Covers: page-specific original snapshot, uploaded receipt storage, OCR review state, GET page review endpoint, side-by-side leader control, manual confirmation guardrail
+Description: Verifies a leader gets a meaningful visual reference before manually approving an uncertain page.
+
+Steps:
+1. Open Dokumente and click QA Vergleich vorbereiten; wait until QA Ergebnis shows a Vergleich ST-DOC id, then open that document
+2. Verify Prüfen & abschließen is disabled while the page still requires review; open Vergleich öffnen for the uncertain page
+3. Verify Digitales Original and Hochgeladener Rücklauf are displayed side by side with QR/Dokument-ID/Seite/Unterweisungs-ID/Version/PNr/Unterschrift comparison indicators, then use Seite nach Vergleich bestätigen
+
+Expected: Manual approval is not blind: the leader can compare the page-specific digital original against the actual uploaded scan before confirming it.
+
+## Test 3 - Employee document opens only the employee signature page by default
 Viewport: mobile
-Covers: global internal Menu action, rerender-safe Menu insertion, overlay cleanup, sidebar navigation, central v0.23 Documents regression, PNr-#### preservation
-Description: Verifies the new internal Menu button opens the main navigation safely during rerenders and does not regress central document navigation.
+Covers: multi-page completion, employee PNr page filtering, signed-page URLs, employee profile document link, expand-to-all-pages control, mobile overflow prevention
+Description: Verifies an employee does not initially see every page of a multi-page signed group document.
 
 Steps:
-1. Open an employee profile, choose the new "Menü" button, and verify the main sidebar opens without a page error
-2. Choose "Dokumente" and verify the central view contains "Dokumente hochladen" and "Erwartete Rückläufe" and does not show "Lokale Prototyp-Nachverfolgung"
-3. Return to Mitarbeitende and verify a canonical PNr-#### employee identifier remains visible
+1. Open Dokumente and click QA Mitarbeiteransicht vorbereiten; wait until QA Ergebnis shows the target employee name, PNr and ST-DOC
+2. Navigate to Mitarbeitende, search for the displayed target PNr, open that employee, verify Dokumentierte Abschlüsse contains the QA ST-DOC, and click Dokument öffnen
+3. Verify the signed-document viewer initially shows only the page containing that employee's PNr/signature and offers Alle Seiten anzeigen; click it and verify all 3 pages become available without horizontal overflow
 
-Expected: The Menu button safely exits the internal overlay into the main navigation, central Documents remains active, and no frontend insertion error occurs.
+Expected: The employee profile defaults to the relevant signature page, while the full signed document remains available on demand.
+
+## Test 4 - Printed confirmation emphasizes machine-readable identity
+Viewport: desktop
+Covers: group confirmation print preview, larger QR/quiet area, right-side official metadata block, larger Seite x/y, four-column signature table
+Description: Verifies the v0.24 print layout is optimized for both paper signing and later machine recognition.
+
+Steps:
+1. Open Unterweisungen, select one training for Gruppenunterweisung, assign at least two matching employees, and prepare the Schulungsbestätigung preview
+2. Verify the print preview has the title on the left and a compact metadata block at the upper right containing Unterweisungs-ID, Durchgeführt am, Version and Teilnehmende
+3. Verify the page QR has a visibly generous white margin and is larger than before, Seite 1/1 is prominent, and the participant table contains Mitarbeitende Person, PNr., Tätigkeit and Unterschrift without a Datum column
+
+Expected: The confirmation remains printable while QR, page numbering and document metadata are easier for SafeTrack to recognize later.
