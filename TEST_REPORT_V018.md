@@ -34,6 +34,22 @@
 
 See `INCIDENT_V018_GROUP_WORKFLOW.md` for root-cause and prevention details.
 
+## Production validation
+
+- Final merged runtime source commit: `69956c07e50cd246ebbf350e93912f6f50cb3b83`
+- Production AppDeploy app: `safetrack-v14-ybr3e8`
+- Production AppDeploy version: `v6` / `1786097876791`
+- Public URL: `https://safetrack-v14-ybr3e8.v2.appdeploy.ai/`
+- Production build marker: `appdeploy-production-v0.18-69956c07`
+- QA run group: `63554bdc89e4e3b9`
+- Automated production browser result: `5/5 passed`
+- Frontend errors: `0`
+- Network errors: `0`
+- Desktop workflows: passed
+- Mobile 375 × 667 workflow: passed
+- Production `index.html` was read back from AppDeploy and confirmed to load all runtime CSS/JavaScript from the exact `69956c07e50cd246ebbf350e93912f6f50cb3b83` commit.
+- Git rollback branch for this confirmed working release: `backup/safetrack-v0-18-working-20260807`
+
 ## Release gate
 
-The preview is accepted for merge because the exact application code passed all five browser workflows. Production must be redeployed from the final merged `main` commit and the same five workflows must pass again on the production URL before SafeTrack v0.18 is reported as published.
+SafeTrack v0.18 passed both isolated preview validation and exact production validation. The release is accepted as the current confirmed working public version. Native iPhone system-print-dialog behavior remains a platform-specific acceptance check when group Schulungsbestätigung printing is exercised on an actual iPhone.
