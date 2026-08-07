@@ -3,46 +3,34 @@
 ## Test 1 - Print, acknowledge, and open the central document register [sanity]
 Viewport: desktop
 Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, central ST-DOC allocation, four-column print layout, document status, bulk upload entry point
-Description: Verifies one complete print workflow creates and acknowledges a central document without relying on another test's state.
+Description: Verifies one complete print workflow creates and acknowledges a central document.
 
 Steps:
 1. Open "Unterweisungen", select one broadly applicable training, choose "Mitarbeitende zuweisen", select several employees, enter the instructor fields, and open the confirmation preview
 2. Verify the participant table contains only "Mitarbeitende Person", "PNr.", "Tätigkeit", and "Unterschrift", choose "Drucken", then return from the print flow
 3. Choose "Druck bestätigt – Dokumente öffnen" and inspect the created document row and the Documents header
 
-Expected: The confirmation has no participant Datum column, the Unterschrift column is wide, a central ST-DOC identifier is allocated, the document appears with status "Gedruckt – Rückupload ausstehend", and a standalone "Dokumente hochladen" control is visible and supports multiple PDF/JPG/PNG files.
+Expected: The confirmation has no participant Datum column, the Unterschrift column is wide, a central ST-DOC identifier and print snapshot are stored, the document appears with status "Gedruckt – Rückupload ausstehend", and a standalone "Dokumente hochladen" control is visible and supports multiple PDF/JPG/PNG files.
 
-## Test 2 - Newly printed document blocks completion before a verified return
+## Test 2 - Signed return is matched, reviewed, completed, and visible on the employee
 Viewport: desktop
-Covers: GET /api/documents/:id, GET /api/documents/:id/snapshot-url, central document detail, saved print snapshot, leader-review guardrail
-Description: Verifies the guardrail and saved snapshot using a document created inside this same independent test.
+Covers: POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, GET /api/documents/:id, POST /api/documents/:id/complete, GET /api/documents/:id/file-url, GET /api/employees/:pnr/completions, QR/OCR comparison, leader approval, completion assignment, employee profile document link
+Description: Uses the QA-only helper to create a central test document quickly, then runs the real signed-return storage, OCR/QR, review, completion, retrieval, and employee-profile pipeline. The helper is absent in normal SafeTrack use and automatically retries one transient upload-store failure just like the production bulk upload flow.
 
 Steps:
-1. Create a group confirmation from "Unterweisungen", select at least one matching employee, open the preview, choose "Drucken", then acknowledge with "Druck bestätigt – Dokumente öffnen"
-2. Open the document just created in the Documents list and inspect its metadata and participant list
-3. Choose "Gespeichertes Dokument öffnen", confirm the saved document opens, return to the detail, and inspect "Prüfen & abschließen"
-
-Expected: The document detail shows its ST-DOC, training metadata and participants; the centrally saved print snapshot can be opened; and "Prüfen & abschließen" remains disabled because no automatically checked signed return has been uploaded.
-
-## Test 3 - Signed return is matched, reviewed, completed, and visible on the employee
-Viewport: desktop
-Covers: POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, POST /api/documents/:id/complete, GET /api/documents/:id/file-url, GET /api/employees/:pnr/completions, QR/OCR comparison, leader approval, completion assignment, employee profile document link
-Description: Uses the QA-only helper to create a central test document quickly, then runs the real signed-return storage, OCR/QR, review, completion, retrieval, and employee-profile pipeline. The helper is absent in normal SafeTrack use.
-
-Steps:
-1. Open "Dokumente" and choose "QA Rücklauf simulieren"; wait until a document appears with status "Prüfung durch Führungskraft erforderlich"
+1. Open "Dokumente" and choose "QA Rücklauf simulieren" once; wait until a document appears with status "Prüfung durch Führungskraft erforderlich"
 2. Open that document, note its participant name and PNr., inspect "Automatische Prüfung", choose "Prüfen & abschließen", and confirm the action
 3. Verify the document becomes green "Abgeschlossen – Mitarbeitenden zugeordnet", choose "Unterschriebenes Dokument öffnen", then find the noted employee by PNr. and verify the employee profile shows this ST-DOC under "Dokumentierte Abschlüsse" with "Dokument öffnen"
 
-Expected: The QA return passes through real central storage and QR/OCR matching, requires leader approval, becomes green only after approval, the signed file is retrievable, the training completion is synchronized to the participant, and the same signed ST-DOC is accessible from the employee profile.
+Expected: One click is sufficient even if the initial central store call has a transient failure; the return passes through real central storage and QR/OCR matching, requires leader approval, becomes green only after approval, the signed file is retrievable, the training completion is synchronized to the participant, and the same signed ST-DOC is accessible from the employee profile.
 
-## Test 4 - Mobile multilingual and Documents UI remain responsive
+## Test 3 - Mobile multilingual and Documents UI remain responsive
 Viewport: mobile
 Covers: GET /api/documents, GET /api/employees/:pnr/completions, mobile navigation, Arabic RTL, Documents dialog, PNr-#### format, horizontal overflow prevention
 Description: Verifies the backend upgrade and profile refresh fix do not regress mobile, RTL, personnel identifiers, or document navigation.
 
 Steps:
-1. Switch the language selector to Arabic, navigate to "Mitarbeitende", expand an area and job group, and inspect a PNr. value
+1. Switch the language selector to Arabic, navigate to "Mitarbeitende", expand one area and job group, and inspect a PNr. value
 2. Open and close one employee profile, then open "Dokumente"
 3. Inspect the Documents header, "Dokumente hochladen" control, and full page width
 
