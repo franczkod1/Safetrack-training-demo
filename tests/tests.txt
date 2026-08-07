@@ -12,26 +12,26 @@ Steps:
 
 Expected: The checkmark is oriented correctly, hierarchy depth is visually obvious, and mobile internal navigation exposes both Menu and Zurück without overflow.
 
-## Test 2 - Training hierarchy uses the same depth language
+## Test 2 - Training catalog hierarchy remains clear
 Viewport: desktop
-Covers: employee training category hierarchy, training catalog hierarchy, status-color separation, desktop regression
-Description: Verifies hierarchical training views use neutral darker-to-lighter surfaces without replacing red/yellow/green status meaning.
+Covers: training catalog hierarchy, neutral depth surfaces, desktop regression
+Description: Quickly verifies the training catalog uses the same darker-heading/light-card hierarchy.
 
 Steps:
-1. Open Mitarbeitende, open one employee, and expand one training category; verify the category header is darker than the individual training rows
-2. Return to Unterweisungen and verify category/group headings are visually stronger than the individual training cards
-3. Verify critical/soon/valid badges still retain their red/yellow/green status colors and the page remains usable
+1. Open Unterweisungen
+2. Verify a category/group heading has a stronger neutral background than the individual white training cards beneath it
+3. Verify the catalog remains readable and interactive
 
-Expected: Training hierarchy follows the same neutral depth system while status colors retain their original semantic meaning.
+Expected: Training categories are visually stronger than individual training cards without changing the SafeTrack status semantics.
 
 ## Test 3 - Internal Menu returns to main navigation and central Documents remains reachable
 Viewport: mobile
-Covers: global internal Menu action, overlay cleanup, sidebar navigation, central v0.23 Documents regression, PNr-#### preservation
-Description: Verifies the new internal Menu button actually opens the main navigation and does not regress central document navigation.
+Covers: global internal Menu action, rerender-safe Menu insertion, overlay cleanup, sidebar navigation, central v0.23 Documents regression, PNr-#### preservation
+Description: Verifies the new internal Menu button opens the main navigation safely during rerenders and does not regress central document navigation.
 
 Steps:
-1. Open an employee profile, choose the new "Menü" button, and verify the main sidebar opens
+1. Open an employee profile, choose the new "Menü" button, and verify the main sidebar opens without a page error
 2. Choose "Dokumente" and verify the central view contains "Dokumente hochladen" and "Erwartete Rückläufe" and does not show "Lokale Prototyp-Nachverfolgung"
 3. Return to Mitarbeitende and verify a canonical PNr-#### employee identifier remains visible
 
-Expected: The Menu button exits the internal overlay into the main navigation, central Documents remains active, and employee identifiers are unchanged.
+Expected: The Menu button safely exits the internal overlay into the main navigation, central Documents remains active, and no frontend insertion error occurs.
