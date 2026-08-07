@@ -1,37 +1,61 @@
 # Tests
 
-## Test 1 - Print, acknowledge, and reopen the central document [sanity]
+## Test 1 - Complete three-page return passes strict validation and completes [sanity]
 Viewport: desktop
-Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, GET /api/documents/:id, GET /api/documents/:id/snapshot-url, central ST-DOC allocation, four-column print layout, document status, saved print snapshot, bulk upload entry point
-Description: Verifies one concise print workflow centrally stores the document and its exact printable snapshot, then reopens it from Documents.
+Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, GET /api/documents/:id, GET /api/documents/:id/snapshot-url, POST /api/documents/:id/complete, GET /api/documents/:id/file-url, GET /api/employees/:pnr/completions, strict Seite x/y validation, QR/OCR per-page identity, employee completion link
+Description: Uses the QA-only helper to create and return a genuine three-page SafeTrack document through the production storage and OCR pipeline, then verifies leader approval and employee assignment.
 
 Steps:
-1. Open "Unterweisungen", select exactly one broadly applicable training (do not select a second training), choose "Mitarbeitende zuweisen", select exactly two matching employees, enter the instructor fields, and open the confirmation preview
-2. Verify the participant table contains only "Mitarbeitende Person", "PNr.", "Tätigkeit", and "Unterschrift", choose "Drucken", then return from the print flow and choose "Druck bestätigt – Dokumente öffnen"
-3. Open the newly created document, verify status "Gedruckt – Rückupload ausstehend", verify "Dokumente hochladen" is available in the Documents view, then choose "Gespeichertes Dokument öffnen" and confirm the saved snapshot opens/triggers successfully
+1. Open "Dokumente" and choose "QA 3 Seiten vollständig"; wait until the created document appears with status "Prüfung durch Führungskraft erforderlich"
+2. Open the document and verify the "Seitenprüfung" block says "Vollständig", Erwartet 3, Erkannt 3, no missing/duplicate/foreign/unreadable pages; open "Gespeichertes Dokument öffnen"
+3. Choose "Prüfen & abschließen", confirm, verify green "Abgeschlossen – Mitarbeitenden zugeordnet", open "Unterschriebenes Dokument öffnen", then open the listed participant profile and verify the same ST-DOC appears under "Dokumentierte Abschlüsse" with "Dokument öffnen"
 
-Expected: The confirmation has no participant Datum column, the Unterschrift column is wide, a central ST-DOC identifier and print snapshot are stored without a visible save error, the document has status "Gedruckt – Rückupload ausstehend", the bulk upload control is available, and the exact saved print snapshot can be reopened.
+Expected: All three pages are identified by matching QR and printed ST-DOC, Seite 1/3 through 3/3 is complete and unique, completion is allowed only after leader approval, and the completed signed document is linked from the employee profile.
 
-## Test 2 - Signed return is matched, reviewed, completed, and visible on the employee
+## Test 2 - Missing page blocks completion
 Viewport: desktop
-Covers: POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, GET /api/documents/:id, POST /api/documents/:id/complete, GET /api/documents/:id/file-url, GET /api/employees/:pnr/completions, QR/OCR comparison, leader approval, completion assignment, employee profile document link
-Description: Uses the QA-only helper to create a central test document quickly, then runs the real signed-return storage, OCR/QR, review, completion, retrieval, and employee-profile pipeline. The helper is absent in normal SafeTrack use and automatically retries one transient upload-store failure just like the production bulk upload flow.
+Covers: strict page-count comparison, missing Seite x/y detection, critical validation status, completion guardrail
+Description: Verifies a document with pages 1/3 and 3/3 cannot be completed because page 2/3 is missing.
 
 Steps:
-1. Open "Dokumente" and choose "QA Rücklauf simulieren" once; wait until a document appears with status "Prüfung durch Führungskraft erforderlich"
-2. Open that document, note its participant name and PNr., inspect "Automatische Prüfung", choose "Prüfen & abschließen", and confirm the action
-3. Verify the document becomes green "Abgeschlossen – Mitarbeitenden zugeordnet", choose "Unterschriebenes Dokument öffnen", then find the noted employee by PNr. and verify the employee profile shows this ST-DOC under "Dokumentierte Abschlüsse" with "Dokument öffnen"
+1. Open "Dokumente" and choose "QA Seite fehlt"; wait for the generated document
+2. Open the document and inspect "Seitenprüfung"
+3. Verify it reports "Kritische Abweichung", shows 2 recognized uploads against 3 expected pages, explicitly reports "Seite 2/3 fehlt", and "Prüfen & abschließen" is disabled
 
-Expected: One click is sufficient even if the initial central store call has a transient failure; the return passes through real central storage and QR/OCR matching, requires leader approval, becomes green only after approval, the signed file is retrievable, the training completion is synchronized to the participant, and the same signed ST-DOC is accessible from the employee profile.
+Expected: The missing page is a blocking error and the document cannot be assigned to employees.
 
-## Test 3 - Mobile multilingual and Documents UI remain responsive
+## Test 3 - Duplicate and foreign pages are blocking errors
+Viewport: desktop
+Covers: duplicate Seite x/y detection, foreign ST-DOC detection, QR/OCR conflict detection, completion guardrail
+Description: Verifies duplicate pagination and a page belonging to another ST-DOC are both rejected as critical page errors.
+
+Steps:
+1. Open "Dokumente", choose "QA Seite doppelt", open the generated document, and verify "Seite 2/3" is reported as duplicated and completion is disabled
+2. Return to "Dokumente", choose "QA fremde Seite", and open that generated document
+3. Verify "Seitenprüfung" reports a foreign/wrong page or mismatching QR/printed Dokument-ID and "Prüfen & abschließen" remains disabled
+
+Expected: Neither duplicate pages nor a page from another ST-DOC can be approved or assigned to employees.
+
+## Test 4 - Thirty-page PDF limit is accepted
+Viewport: desktop
+Covers: client PDF parser, 30-page maximum, 20 MB upload policy, Documents upload UI
+Description: Verifies the production PDF renderer accepts exactly 30 pages and the Documents UI advertises the new limits.
+
+Steps:
+1. Open "Dokumente" and verify the upload note states max. 20 MB per file and PDF max. 30 pages
+2. Choose "QA 30-Seiten-PDF"
+3. Wait for the helper result and verify it reports "QA PDF: 30/30 Seiten akzeptiert"
+
+Expected: A valid 30-page PDF is accepted by the same PDF rendering function used by normal uploads, while the UI shows the 20 MB and 30-page limits.
+
+## Test 5 - Mobile multilingual Documents UI remains responsive
 Viewport: mobile
-Covers: GET /api/documents, GET /api/employees/:pnr/completions, mobile navigation, Arabic RTL, Documents dialog, PNr-#### format, horizontal overflow prevention
-Description: Verifies the backend upgrade and profile refresh fix do not regress mobile, RTL, personnel identifiers, or document navigation.
+Covers: GET /api/documents, GET /api/employees/:pnr/completions, mobile navigation, Arabic RTL, Documents dialog, PNr-#### format, horizontal overflow prevention, Seitenprüfung responsive layout
+Description: Verifies v0.22 does not regress mobile, RTL, personnel identifiers, or document navigation.
 
 Steps:
-1. Switch the language selector to Arabic, navigate to "Mitarbeitende", expand one area and job group, and inspect a PNr. value
+1. Switch the language selector to Arabic, navigate to "Mitarbeitende", expand one area and job group, and verify a PNr-#### value
 2. Open and close one employee profile, then open "Dokumente"
-3. Inspect the Documents header, "Dokumente hochladen" control, and full page width
+3. Verify "Dokumente hochladen" is reachable, the 20 MB / 30-page note fits the viewport, and the page has no horizontal scrolling
 
-Expected: Arabic RTL remains active, personnel identifiers retain the PNr-#### format, employee profile lookup succeeds, Documents is usable on mobile, the upload control is reachable, and the page has no horizontal scrolling.
+Expected: Arabic RTL remains active, PNr-#### stays correct, Documents is usable on mobile, and no horizontal overflow is introduced.
