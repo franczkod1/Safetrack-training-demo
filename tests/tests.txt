@@ -1,16 +1,16 @@
 # Tests
 
-## Test 1 - Print, acknowledge, and open the central document register [sanity]
+## Test 1 - Print, acknowledge, and reopen the central document [sanity]
 Viewport: desktop
-Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, central ST-DOC allocation, four-column print layout, document status, bulk upload entry point
-Description: Verifies one complete print workflow creates and acknowledges a central document.
+Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, GET /api/documents/:id, GET /api/documents/:id/snapshot-url, central ST-DOC allocation, four-column print layout, document status, saved print snapshot, bulk upload entry point
+Description: Verifies one concise print workflow centrally stores the document and its exact printable snapshot, then reopens it from Documents.
 
 Steps:
-1. Open "Unterweisungen", select one broadly applicable training, choose "Mitarbeitende zuweisen", select several employees, enter the instructor fields, and open the confirmation preview
-2. Verify the participant table contains only "Mitarbeitende Person", "PNr.", "Tätigkeit", and "Unterschrift", choose "Drucken", then return from the print flow
-3. Choose "Druck bestätigt – Dokumente öffnen" and inspect the created document row and the Documents header
+1. Open "Unterweisungen", select exactly one broadly applicable training (do not select a second training), choose "Mitarbeitende zuweisen", select exactly two matching employees, enter the instructor fields, and open the confirmation preview
+2. Verify the participant table contains only "Mitarbeitende Person", "PNr.", "Tätigkeit", and "Unterschrift", choose "Drucken", then return from the print flow and choose "Druck bestätigt – Dokumente öffnen"
+3. Open the newly created document, verify status "Gedruckt – Rückupload ausstehend", verify "Dokumente hochladen" is available in the Documents view, then choose "Gespeichertes Dokument öffnen" and confirm the saved snapshot opens/triggers successfully
 
-Expected: The confirmation has no participant Datum column, the Unterschrift column is wide, a central ST-DOC identifier and print snapshot are stored, the document appears with status "Gedruckt – Rückupload ausstehend", and a standalone "Dokumente hochladen" control is visible and supports multiple PDF/JPG/PNG files.
+Expected: The confirmation has no participant Datum column, the Unterschrift column is wide, a central ST-DOC identifier and print snapshot are stored without a visible save error, the document has status "Gedruckt – Rückupload ausstehend", the bulk upload control is available, and the exact saved print snapshot can be reopened.
 
 ## Test 2 - Signed return is matched, reviewed, completed, and visible on the employee
 Viewport: desktop
