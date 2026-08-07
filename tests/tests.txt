@@ -14,27 +14,27 @@ Expected: The confirmation has no participant Datum column, the Unterschrift col
 
 ## Test 2 - Newly printed document blocks completion before a verified return
 Viewport: desktop
-Covers: GET /api/documents/:id, GET /api/documents/:id/snapshot-url, central document detail, leader-review guardrail
-Description: Verifies the guardrail using a document created inside this same independent test.
+Covers: GET /api/documents/:id, GET /api/documents/:id/snapshot-url, central document detail, saved print snapshot, leader-review guardrail
+Description: Verifies the guardrail and saved snapshot using a document created inside this same independent test.
 
 Steps:
 1. Create a group confirmation from "Unterweisungen", select at least one matching employee, open the preview, choose "Drucken", then acknowledge with "Druck bestätigt – Dokumente öffnen"
-2. Open the document just created in the Documents list
-3. Inspect its metadata, participant list, saved-document action, and "Prüfen & abschließen" button
+2. Open the document just created in the Documents list and inspect its metadata and participant list
+3. Choose "Gespeichertes Dokument öffnen", confirm the saved document opens, return to the detail, and inspect "Prüfen & abschließen"
 
-Expected: The document detail shows its ST-DOC, training metadata and participants; "Gespeichertes Dokument öffnen" is available; and "Prüfen & abschließen" remains disabled because no automatically checked signed return has been uploaded.
+Expected: The document detail shows its ST-DOC, training metadata and participants; the centrally saved print snapshot can be opened; and "Prüfen & abschließen" remains disabled because no automatically checked signed return has been uploaded.
 
-## Test 3 - Employee profile performs a fresh central completion lookup
+## Test 3 - Signed return is matched, reviewed, completed, and visible on the employee [full-pipeline]
 Viewport: desktop
-Covers: GET /api/employees/:pnr/completions, employee profile refresh, stale-cache prevention, existing training profile stability
-Description: Verifies the employee profile requests current central completion data every time it is opened, even when the clean v0.21 test database contains no completed documents yet.
+Covers: POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, POST /api/documents/:id/complete, GET /api/documents/:id/file-url, GET /api/employees/:pnr/completions, QR/OCR comparison, leader approval, completion assignment, employee profile document link
+Description: Runs the real v0.21 signed-return backend pipeline using the QA-only synthetic paper return. The QA helper is only visible when AppDeploy runs with its internal qa_ key and is absent in normal SafeTrack use.
 
 Steps:
-1. Open "Mitarbeitende", expand one area and job group, and open an employee profile
-2. Close the employee profile, then reopen the same employee
-3. Inspect the existing training list and page behavior after the second open
+1. Create and print one group confirmation with one matching employee, note that employee's name and PNr., then choose "Druck bestätigt – Dokumente öffnen"
+2. In Documents choose "QA Rücklauf simulieren" and wait until the created document changes to "Prüfung durch Führungskraft erforderlich"; open it and inspect "Automatische Prüfung"
+3. Choose "Prüfen & abschließen", confirm the action, verify the document becomes green "Abgeschlossen – Mitarbeitenden zugeordnet", open the signed document, then open the noted employee profile and verify "Dokumentierte Abschlüsse" contains this ST-DOC with a "Dokument öffnen" action
 
-Expected: Both profile opens complete successfully, the central completion endpoint is queried without an application error, the existing training profile remains usable, and no stale completion information is shown. When a real completed document exists, this same lookup supplies the "Dokumentierte Abschlüsse" records and document links.
+Expected: The synthetic signed return passes through storage and real OCR/QR matching, requires leader approval, becomes green only after approval, the signed file is retrievable, the employee's training completion is synchronized, and the same signed ST-DOC is directly accessible from that employee profile.
 
 ## Test 4 - Mobile multilingual and Documents UI remain responsive
 Viewport: mobile
