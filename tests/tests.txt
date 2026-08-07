@@ -1,37 +1,37 @@
 # Tests
 
-## Test 1 - Saved snapshot, completion, and employee evidence [sanity]
-Viewport: desktop
-Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, GET /api/documents/:id, GET /api/documents/:id/snapshot-url, GET /api/documents/:id/pages, POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, POST /api/documents/:id/complete, GET /api/employees/:pnr/completions, employee completion synchronization, Dokumentierte Abschlüsse, Dokument öffnen
-Description: Fast end-to-end proof that the saved print snapshot and returned signed page are centrally retrievable and the completed ST-DOC is linked from its participant profile.
+## Test 1 - Mobile dashboard shows current German-only status UI [sanity]
+Viewport: mobile
+Covers: current local dashboard date, removed dashboard start button, removed admin language selector, menu version placement, critical/soon/valid visual states, mobile overflow prevention
+Description: Verifies the requested v0.23 dashboard cleanup on an iPhone-sized viewport.
 
 Steps:
-1. Open "Dokumente", choose "QA Einzelabschluss", wait for the generated 1/1 document, open it, verify Seite 1/1 is verified, then choose "Gespeichertes Dokument öffnen" and confirm the stored print snapshot opens
-2. Choose "Prüfen & abschließen", confirm green "Abgeschlossen – Mitarbeitenden zugeordnet", choose "Rücklaufseiten öffnen", verify Seite 1/1 is displayed, and note the participant PNr.
-3. Return to Mitarbeitende, search/open that PNr., and verify "Dokumentierte Abschlüsse" contains the same ST-DOC with a "Dokument öffnen" action
+1. Open Übersicht and verify the hero shows "HEUTE · 07.08.2026", no "Unterweisung starten" button is present in the hero, and no language selector is visible in the top bar
+2. Verify the three KPI cards are visually distinct: Kritisch has a pale red surface with an exclamation symbol, In 6–30 Tagen fällig has a pale yellow surface with a triangle symbol, and Gültig has a pale green surface with a check symbol
+3. Open "Menü" and verify "SafeTrack v0.23" is visible at the lower-left of the open sidebar; verify there is no horizontal page scrolling
 
-Expected: Both the original saved print snapshot and selected signed return are retrievable, completion is durable, and the employee profile contains the same ST-DOC under Dokumentierte Abschlüsse with Dokument öffnen.
+Expected: The mobile dashboard uses the current date, German-only admin chrome, the requested three status treatments, no hero start button, and the version is visible inside the open menu.
 
-## Test 2 - Mixed pages keep a missing middle page and accept it later
+## Test 2 - Dashboard status navigation and Zurück remain functional
 Viewport: desktop
-Covers: unordered multi-document page routing, persistent expected-page records, cross-upload page assembly, missing-page completion guardrail
-Description: Verifies one upload may contain pages from two different documents while the main three-page document remains incomplete until its middle page arrives in a later independent upload.
+Covers: dashboard KPI interaction, filtered employee navigation, Zurück navigation, German admin UI
+Description: Verifies the visual bugfix does not break the existing dashboard navigation.
 
 Steps:
-1. Open "Dokumente", choose "QA Gemischt 1+3", wait for processing, and verify two ST-DOC cards are updated: one one-page document is complete while the three-page document is 2/3
-2. Open the three-page document, verify "Seite 2/3 fehlt – bitte hochladen", and verify "Prüfen & abschließen" is disabled
-3. Return to Dokumente, choose "QA Seite 2 nachreichen", reopen the same ST-DOC, and verify it becomes 3/3 with final leader review available
+1. Open Übersicht and verify the admin interface is German and no language selector is shown
+2. Click the "Kritisch" KPI card and verify Mitarbeitende opens with the critical status filter applied
+3. Choose "Zurück" and verify Übersicht returns with the three status cards still visible
 
-Expected: Interleaved upload order does not affect routing, the missing expected page remains attached to the same main document across uploads, and completion is blocked until Seite 2/3 arrives and is verified.
+Expected: Status cards remain interactive, Zurück returns to the dashboard, and removing the language selector does not break navigation.
 
-## Test 3 - Duplicate selection, manual confirmation, and foreign identity are safe
-Viewport: desktop
-Covers: POST /api/pages/:token/select, POST /api/pages/:token/confirm, duplicate receipt retention, manual page approval, hard identity conflict, completion guardrail
-Description: Uses one mixed QA bundle to create a duplicate page, a noncritical manual-review page, and a different document page with conflicting printed identity.
+## Test 3 - Central v0.23 Documents view and employee identifiers are unchanged
+Viewport: mobile
+Covers: v0.23 Documents navigation regression, expected-return registry, upload control, PNr-#### employee identifiers, no old local registry
+Description: Verifies the dashboard-only patch does not regress the central document workflow or employee navigation.
 
 Steps:
-1. Open "Dokumente", choose "QA Duplikat + manuell", wait for processing, open the two-page review document, and verify Seite 1/2 has multiple uploads while Seite 2/2 requires manual review
-2. Choose one "Diese Seite verwenden" for Seite 1/2 and "Seite bestätigen" for Seite 2/2; verify the document becomes complete and final leader review is available
-3. Return to Dokumente, open the other generated one-page document, verify a critical identity conflict is shown, and verify "Prüfen & abschließen" is disabled
+1. Open "Menü" and choose "Dokumente"; verify the central v0.23 view contains "Dokumente hochladen" and "Erwartete Rückläufe" and does not show "Lokale Prototyp-Nachverfolgung"
+2. Close/return from Dokumente, open Mitarbeitende, expand one area and one job group, and verify a canonical PNr-#### value is visible
+3. Open and close one employee profile and verify the mobile page still has no horizontal overflow
 
-Expected: Duplicate evidence is retained until a leader chooses a copy, noncritical uncertainty requires explicit confirmation, and conflicting identity remains a blocking error.
+Expected: The central v0.23 Documents registry remains active, PNr-#### is preserved, and the dashboard UI patch introduces no mobile regression.
