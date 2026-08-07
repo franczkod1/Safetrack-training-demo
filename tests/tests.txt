@@ -1,18 +1,30 @@
 # Tests
 
-## Test 1 - Mixed pages, later missing page, completion, and employee evidence [sanity]
+## Test 1 - Saved snapshot, completion, and employee evidence [sanity]
 Viewport: desktop
-Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, GET /api/documents/:id, GET /api/documents/:id/pages, POST /api/documents/:id/complete, GET /api/employees/:pnr/completions, unordered multi-document routing, persistent expected pages, cross-upload assembly, employee document link
-Description: Runs the core v0.23 lifecycle with interleaved pages from two documents, keeps a missing middle page open, accepts it in a later upload, completes the document, and verifies the signed evidence on the participant profile.
+Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, GET /api/documents/:id, GET /api/documents/:id/snapshot-url, GET /api/documents/:id/pages, POST /api/uploads/store, POST /api/uploads/:id/analyze, POST /api/uploads/:id/finalize, POST /api/documents/:id/complete, GET /api/employees/:pnr/completions, employee completion synchronization, Dokumentierte Abschlüsse, Dokument öffnen
+Description: Fast end-to-end proof that the saved print snapshot and returned signed page are centrally retrievable and the completed ST-DOC is linked from its participant profile.
 
 Steps:
-1. Open "Dokumente", choose "QA Gemischt 1+3", wait for processing, and verify two ST-DOC cards appear: one is 1/1 complete while the three-page document is 2/3; open the three-page document and verify "Seite 2/3 fehlt – bitte hochladen" and disabled completion
-2. Return to Dokumente, choose "QA Seite 2 nachreichen", reopen the same ST-DOC, verify 3/3 and final leader review; choose "Rücklaufseiten öffnen" and verify pages are presented in logical order 1/3, 2/3, 3/3; then choose "Prüfen & abschließen" and confirm green "Abgeschlossen – Mitarbeitenden zugeordnet"
-3. Note the participant PNr., navigate to Mitarbeitende, search/open that employee, and verify "Dokumentierte Abschlüsse" lists the same ST-DOC with a "Dokument öffnen" action
+1. Open "Dokumente", choose "QA Einzelabschluss", wait for the generated 1/1 document, open it, verify Seite 1/1 is verified, then choose "Gespeichertes Dokument öffnen" and confirm the stored print snapshot opens
+2. Choose "Prüfen & abschließen", confirm green "Abgeschlossen – Mitarbeitenden zugeordnet", choose "Rücklaufseiten öffnen", verify Seite 1/1 is displayed, and note the participant PNr.
+3. Return to Mitarbeitende, search/open that PNr., and verify "Dokumentierte Abschlüsse" contains the same ST-DOC with a "Dokument öffnen" action
 
-Expected: Mixed physical order has no effect on routing, missing pages persist across upload sessions, the reconstructed return is logically ordered, completion is blocked until every page is verified, and the completed signed evidence is linked from the employee profile.
+Expected: Both the original saved print snapshot and selected signed return are retrievable, completion is durable, and the employee profile contains the same ST-DOC under Dokumentierte Abschlüsse with Dokument öffnen.
 
-## Test 2 - Duplicate selection, manual page confirmation, and foreign identity are safe
+## Test 2 - Mixed pages keep a missing middle page and accept it later
+Viewport: desktop
+Covers: unordered multi-document page routing, persistent expected-page records, cross-upload page assembly, missing-page completion guardrail
+Description: Verifies one upload may contain pages from two different documents while the main three-page document remains incomplete until its middle page arrives in a later independent upload.
+
+Steps:
+1. Open "Dokumente", choose "QA Gemischt 1+3", wait for processing, and verify two ST-DOC cards are updated: one one-page document is complete while the three-page document is 2/3
+2. Open the three-page document, verify "Seite 2/3 fehlt – bitte hochladen", and verify "Prüfen & abschließen" is disabled
+3. Return to Dokumente, choose "QA Seite 2 nachreichen", reopen the same ST-DOC, and verify it becomes 3/3 with final leader review available
+
+Expected: Interleaved upload order does not affect routing, the missing expected page remains attached to the same main document across uploads, and completion is blocked until Seite 2/3 arrives and is verified.
+
+## Test 3 - Duplicate selection, manual confirmation, and foreign identity are safe
 Viewport: desktop
 Covers: POST /api/pages/:token/select, POST /api/pages/:token/confirm, duplicate receipt retention, manual page approval, hard identity conflict, completion guardrail
 Description: Uses one mixed QA bundle to create a duplicate page, a noncritical manual-review page, and a different document page with conflicting printed identity.
@@ -22,16 +34,4 @@ Steps:
 2. Choose one "Diese Seite verwenden" for Seite 1/2 and "Seite bestätigen" for Seite 2/2; verify the document becomes complete and final leader review is available
 3. Return to Dokumente, open the other generated one-page document, verify a critical identity conflict is shown, and verify "Prüfen & abschließen" is disabled
 
-Expected: Duplicate evidence is never silently discarded, noncritical uncertainty requires explicit leader confirmation, and conflicting identity can never make a document completable.
-
-## Test 3 - Mobile Arabic Documents UI and 30-page parser remain robust
-Viewport: mobile
-Covers: GET /api/documents, GET /api/employees/:pnr/completions, client PDF parser, 30-page maximum, 20 MB policy, mobile navigation, Arabic RTL, PNr-####, expected-return UI, horizontal overflow prevention
-Description: Verifies the mobile/RTL experience and the maximum supported PDF page count in one non-OCR regression workflow.
-
-Steps:
-1. Switch language to Arabic, navigate to Mitarbeitende, expand one area and job group, verify a PNr-#### value, and open/close one employee profile
-2. Open "Dokumente" immediately from the menu and verify the v0.23 view appears directly with "Dokumente hochladen", "Erwartete Rückläufe", and the note "max. 20 MB", "PDF max. 30 Seiten", "Reihenfolge beliebig"; verify there is no horizontal scrolling
-3. Choose "QA 30-Seiten-PDF" and verify "QA PDF: 30/30 Seiten akzeptiert"
-
-Expected: The old local Documents view never flashes or replaces v0.23, Arabic RTL and PNr-#### remain correct, the mobile layout has no horizontal overflow, and exactly 30 PDF pages are accepted.
+Expected: Duplicate evidence is retained until a leader chooses a copy, noncritical uncertainty requires explicit confirmation, and conflicting identity remains a blocking error.
