@@ -3,7 +3,7 @@ import { router, json, error, db, storage, ai } from '@appdeploy/sdk';
 type Participant={name:string;pnr:string;role:string};
 type DocumentRecord={documentId:string;fingerprint:string;clientToken:string;trainingKey:string;trainingId:string;trainingName:string;version:string;date:string;participants:Participant[];instructor:string;instructorPersonnel:string;pageCount:number;status:string;statusLabel:string;preparedAt:string;updatedAt:string;snapshotPath?:string;printedAt?:string;signedPath?:string;signedName?:string;signedMime?:string;uploadId?:string;autoCheck?:Record<string,unknown>;completedAt?:string};
 type UploadRecord={filename:string;mimeType:string;size:number;path:string;status:string;statusLabel:string;createdAt:string;updatedAt:string;analyses:Array<Record<string,unknown>>;qrIds:string[];matchedDocumentId?:string;autoCheck?:Record<string,unknown>};
-type StorageWriteItem={path:string;content:string;contentType?:string};
+type StorageWriteItem={path:string;content:string;contentType:string};
 
 const DOCS='documents_v021',UPLOADS='uploads_v021',COMPLETIONS='completions_v021',COUNTERS='counters_v021';
 const now=()=>new Date().toISOString();
