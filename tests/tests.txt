@@ -1,61 +1,49 @@
 # Tests
 
-## Test 1 - Print preparation stores a central SafeTrack document [sanity]
+## Test 1 - Print, acknowledge, and open the central document register [sanity]
 Viewport: desktop
-Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, central ST-DOC allocation, four-column confirmation layout, print-save acknowledgement
-Description: Verifies group printing creates a central document record before the system print flow and preserves the signature-friendly layout.
+Covers: POST /api/documents/prepare, POST /api/documents/:id/snapshot, POST /api/documents/:id/printed, GET /api/documents, central ST-DOC allocation, four-column print layout, document status, bulk upload entry point
+Description: Verifies one complete print workflow creates and acknowledges a central document without relying on another test's state.
 
 Steps:
 1. Open "Unterweisungen", select one broadly applicable training, choose "Mitarbeitende zuweisen", select several employees, enter the instructor fields, and open the confirmation preview
-2. Verify the participant table contains only "Mitarbeitende Person", "PNr.", "Tätigkeit", and "Unterschrift", then choose "Drucken"
-3. Return from the print flow and inspect the save confirmation
+2. Verify the participant table contains only "Mitarbeitende Person", "PNr.", "Tätigkeit", and "Unterschrift", choose "Drucken", then return from the print flow
+3. Choose "Druck bestätigt – Dokumente öffnen" and inspect the created document row and the Documents header
 
-Expected: The printed confirmation has no participant Datum column, signature cells are wide, the ST-DOC identifier is centrally allocated, and a "Dokument erfolgreich gespeichert und druckbereit" acknowledgement appears.
+Expected: The confirmation has no participant Datum column, the Unterschrift column is wide, a central ST-DOC identifier is allocated, the document appears with status "Gedruckt – Rückupload ausstehend", and a standalone "Dokumente hochladen" control is visible and supports multiple PDF/JPG/PNG files.
 
-## Test 2 - Documents menu is central and exposes bulk upload
+## Test 2 - Newly printed document blocks completion before a verified return
 Viewport: desktop
-Covers: GET /api/documents, POST /api/documents/:id/printed, central document registry, multi-file upload entry point, document status
-Description: Verifies acknowledging a print opens the server-backed document register and exposes the new independent upload control.
+Covers: GET /api/documents/:id, GET /api/documents/:id/snapshot-url, central document detail, leader-review guardrail
+Description: Verifies the guardrail using a document created inside this same independent test.
 
 Steps:
-1. Continue from a prepared print acknowledgement and choose "Druck bestätigt – Dokumente öffnen"
-2. Inspect the Documents view and the created document row
-3. Inspect the upload control
+1. Create a group confirmation from "Unterweisungen", select at least one matching employee, open the preview, choose "Drucken", then acknowledge with "Druck bestätigt – Dokumente öffnen"
+2. Open the document just created in the Documents list
+3. Inspect its metadata, participant list, saved-document action, and "Prüfen & abschließen" button
 
-Expected: The document appears with status "Gedruckt – Rückupload ausstehend", a standalone "Dokumente hochladen" button is visible, and its file control accepts multiple PDF/JPG/PNG files.
+Expected: The document detail shows its ST-DOC, training metadata and participants; "Gespeichertes Dokument öffnen" is available; and "Prüfen & abschließen" remains disabled because no automatically checked signed return has been uploaded.
 
-## Test 3 - Document detail blocks completion before a verified return
+## Test 3 - Employee profile performs a fresh central completion lookup
 Viewport: desktop
-Covers: GET /api/documents/:id, GET /api/documents/:id/snapshot-url, leader-review guardrail, review status presentation
-Description: Verifies a printed document remains review-safe until a signed return has been automatically checked.
+Covers: GET /api/employees/:pnr/completions, employee profile refresh, stale-cache prevention, existing training profile stability
+Description: Verifies the employee profile requests current central completion data every time it is opened, even when the clean v0.21 test database contains no completed documents yet.
 
 Steps:
-1. Open a printed document from "Dokumente"
-2. Inspect the saved-document action and review area
-3. Inspect the "Prüfen & abschließen" button before any matched return upload exists
+1. Open "Mitarbeitende", expand one area and job group, and open an employee profile
+2. Close the employee profile, then reopen the same employee
+3. Inspect the existing training list and page behavior after the second open
 
-Expected: The saved document can be opened, the document shows its central metadata and participants, and "Prüfen & abschließen" is disabled until a matched uploaded document has reached leader review.
+Expected: Both profile opens complete successfully, the central completion endpoint is queried without an application error, the existing training profile remains usable, and no stale completion information is shown. When a real completed document exists, this same lookup supplies the "Dokumentierte Abschlüsse" records and document links.
 
-## Test 4 - Employee profile reads central documented completions
-Viewport: desktop
-Covers: GET /api/employees/:pnr/completions, employee profile completion synchronization, signed document link
-Description: Verifies employee profiles query the central completion store and provide a document area without breaking the existing training profile.
-
-Steps:
-1. Open "Mitarbeitende", expand an area and job group, then open an employee profile
-2. Inspect the normal training list and the lower profile area
-3. Close and reopen the employee profile
-
-Expected: The employee profile remains usable, central completion lookup succeeds without frontend or network errors, and when documented completions exist they are shown under "Dokumentierte Abschlüsse" with a "Dokument öffnen" action.
-
-## Test 5 - Mobile multilingual and document UI remain responsive
+## Test 4 - Mobile multilingual and Documents UI remain responsive
 Viewport: mobile
-Covers: mobile navigation, Arabic RTL, Documents dialog, PNr-#### format, horizontal overflow prevention, existing print CSS regression
-Description: Verifies the backend upgrade does not regress mobile, RTL, personnel identifiers, or document navigation.
+Covers: GET /api/documents, GET /api/employees/:pnr/completions, mobile navigation, Arabic RTL, Documents dialog, PNr-#### format, horizontal overflow prevention
+Description: Verifies the backend upgrade and profile refresh fix do not regress mobile, RTL, personnel identifiers, or document navigation.
 
 Steps:
-1. Open the mobile menu, switch to Arabic, then open "Mitarbeitende" and inspect a PNr. value
-2. Open and close an employee profile, then open "Dokumente"
-3. Inspect the Documents header, upload button, and page width
+1. Switch the language selector to Arabic, navigate to "Mitarbeitende", expand an area and job group, and inspect a PNr. value
+2. Open and close one employee profile, then open "Dokumente"
+3. Inspect the Documents header, "Dokumente hochladen" control, and full page width
 
-Expected: Arabic RTL remains active, personnel identifiers retain the PNr-#### format, Documents is usable on mobile, the upload button remains reachable, and the page has no horizontal scrolling.
+Expected: Arabic RTL remains active, personnel identifiers retain the PNr-#### format, employee profile lookup succeeds, Documents is usable on mobile, the upload control is reachable, and the page has no horizontal scrolling.
