@@ -14,15 +14,15 @@ Expected: Documents is a normal app page and the employee hierarchy/PNr layout i
 
 ## Test 2 - Leader compares original and uploaded page before manual approval
 Viewport: desktop
-Covers: page-specific original snapshot, upload/OCR review, GET page review endpoint, side-by-side comparison, manual-confirm guardrail
-Description: Verifies uncertain OCR pages have a real visual control step.
+Covers: page-specific original snapshot, uploaded return viewing before approval, upload/OCR review, GET page review endpoint, side-by-side comparison, manual-confirm guardrail
+Description: Verifies uncertain OCR pages remain viewable and have a real visual control step before approval.
 
 Steps:
 1. Open Dokumente and click QA Vergleich vorbereiten; after QA Ergebnis shows Vergleich: ST-DOC-..., open that ST-DOC
-2. Verify Prüfen & abschließen is disabled and open Vergleich öffnen on the page requiring review
-3. Verify Digitales Original and Hochgeladener Rücklauf are both visible together with the comparison indicators, then click Seite nach Vergleich bestätigen
+2. Verify Prüfen & abschließen is disabled; open Hochgeladenen Rücklauf öffnen and verify the already received page is visible even though it is not yet approved, then close the return viewer
+3. Open Vergleich öffnen; verify Digitales Original and Hochgeladener Rücklauf are both visible together with the comparison indicators, then click Seite nach Vergleich bestätigen
 
-Expected: The leader can compare the original and scan before manually approving the page.
+Expected: A received page is always viewable from Documents, while manual approval requires an original-versus-scan comparison.
 
 ## Test 3 - Employee signed-document view filters by PNr on mobile
 Viewport: mobile
