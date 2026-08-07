@@ -71,9 +71,12 @@
 49. The group employee picker may offer only employees for whom at least one selected training is actually applicable. Each training-specific confirmation list may contain only selected employees to whom that specific training applies.
 50. Group assignment must provide separate bulk controls for critical employees and employees due in 6–30 days, calculated from the selected trainings, while still allowing every employee selection to be adjusted individually.
 51. Group employee lists must support sorting by language so that employees with the same language appear consecutively under a visible language heading; name and personnel-number sorting must remain available.
-52. Group Schulungsbestätigung output must generate one independent participant-list document per selected training. Each list must show participant name, personnel number, language and signature field, together with training ID, training version, completion date and trainer/supervisor name, personnel number and signature field.
+52. Group Schulungsbestätigung output must generate one independent participant-list document per selected training. Each participant must occupy exactly one row with the five columns `Mitarbeitende Person`, `P-Nr.`, `Tätigkeit`, `Datum` and `Unterschrift`. The document must also contain training ID, training version, participant count and trainer/supervisor name, personnel number and signature field.
 53. On mobile, the group employee picker must remain within the viewport, only the employee-list region may scroll, and the primary continuation action must remain visible. Confirmation metadata entry must be a dedicated step rather than being appended below an unbounded employee list.
 54. Code executed from a DOM mutation observer must be demonstrably idempotent. Re-running an enhancement function without application-state changes must create zero new child-list mutations; otherwise event-driven enhancement must be used instead.
+55. Responsive CSS for a component that is also printable must use an explicit `screen` media type. A narrow print viewport must never inherit screen-only responsive table transformations.
+56. Printable participant tables must explicitly restore table semantics inside `@media print` (`table`, `table-header-group`, `table-row-group`, `table-row`, `table-cell`) whenever global or responsive CSS can alter those elements.
+57. A group Schulungsbestätigung regression test must verify exactly five participant columns, exactly one table row per participant, and a long mobile participant list before release.
 
 ## Mandatory error-learning protocol
 
