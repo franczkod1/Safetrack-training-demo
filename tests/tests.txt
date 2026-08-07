@@ -1,37 +1,37 @@
 # Tests
 
-## Test 1 - Mobile dashboard shows current German-only status UI [sanity]
+## Test 1 - Mobile hierarchy navigation and valid checkmark [sanity]
 Viewport: mobile
-Covers: current local dashboard date, removed dashboard start button, removed admin language selector, menu version placement, critical/soon/valid visual states, mobile overflow prevention
-Description: Verifies the requested v0.23 dashboard cleanup on an iPhone-sized viewport.
+Covers: corrected Gültig checkmark, Menu plus Zurück in internal views, employee three-level hierarchy, mobile overflow prevention
+Description: Verifies the requested navigation and hierarchy UI on an iPhone-sized viewport.
 
 Steps:
-1. Open Übersicht and verify the hero shows "HEUTE · 07.08.2026", no "Unterweisung starten" button is present in the hero, and no language selector is visible in the top bar
-2. Verify the three KPI cards are visually distinct: Kritisch has a pale red surface with an exclamation symbol, In 6–30 Tagen fällig has a pale yellow surface with a triangle symbol, and Gültig has a pale green surface with a check symbol
-3. Open "Menü" and verify "SafeTrack v0.23" is visible at the lower-left of the open sidebar; verify there is no horizontal page scrolling
+1. Open Übersicht and verify the Gültig card shows a normal checkmark rather than a downward chevron
+2. Open Mitarbeitende, expand Produktion and one Tätigkeit; verify Produktion has the darkest neutral surface, Tätigkeit a lighter neutral surface, and employee rows are light/white
+3. Open one employee profile and verify both "Menü" and "Zurück" are available at the top; verify there is no horizontal page scrolling
 
-Expected: The mobile dashboard uses the current date, German-only admin chrome, the requested three status treatments, no hero start button, and the version is visible inside the open menu.
+Expected: The checkmark is oriented correctly, hierarchy depth is visually obvious, and mobile internal navigation exposes both Menu and Zurück without overflow.
 
-## Test 2 - Dashboard status navigation and Zurück remain functional
+## Test 2 - Training hierarchy uses the same depth language
 Viewport: desktop
-Covers: dashboard KPI interaction, filtered employee navigation, Zurück navigation, German admin UI
-Description: Verifies the visual bugfix does not break the existing dashboard navigation.
+Covers: employee training category hierarchy, training catalog hierarchy, status-color separation, desktop regression
+Description: Verifies hierarchical training views use neutral darker-to-lighter surfaces without replacing red/yellow/green status meaning.
 
 Steps:
-1. Open Übersicht and verify the admin interface is German and no language selector is shown
-2. Click the "Kritisch" KPI card and verify Mitarbeitende opens with the critical status filter applied
-3. Choose "Zurück" and verify Übersicht returns with the three status cards still visible
+1. Open Mitarbeitende, open one employee, and expand one training category; verify the category header is darker than the individual training rows
+2. Return to Unterweisungen and verify category/group headings are visually stronger than the individual training cards
+3. Verify critical/soon/valid badges still retain their red/yellow/green status colors and the page remains usable
 
-Expected: Status cards remain interactive, Zurück returns to the dashboard, and removing the language selector does not break navigation.
+Expected: Training hierarchy follows the same neutral depth system while status colors retain their original semantic meaning.
 
-## Test 3 - Central v0.23 Documents view and employee identifiers are unchanged
+## Test 3 - Internal Menu returns to main navigation and central Documents remains reachable
 Viewport: mobile
-Covers: v0.23 Documents navigation regression, expected-return registry, upload control, PNr-#### employee identifiers, no old local registry
-Description: Verifies the dashboard-only patch does not regress the central document workflow or employee navigation.
+Covers: global internal Menu action, overlay cleanup, sidebar navigation, central v0.23 Documents regression, PNr-#### preservation
+Description: Verifies the new internal Menu button actually opens the main navigation and does not regress central document navigation.
 
 Steps:
-1. Open "Menü" and choose "Dokumente"; verify the central v0.23 view contains "Dokumente hochladen" and "Erwartete Rückläufe" and does not show "Lokale Prototyp-Nachverfolgung"
-2. Close/return from Dokumente, open Mitarbeitende, expand one area and one job group, and verify a canonical PNr-#### value is visible
-3. Open and close one employee profile and verify the mobile page still has no horizontal overflow
+1. Open an employee profile, choose the new "Menü" button, and verify the main sidebar opens
+2. Choose "Dokumente" and verify the central view contains "Dokumente hochladen" and "Erwartete Rückläufe" and does not show "Lokale Prototyp-Nachverfolgung"
+3. Return to Mitarbeitende and verify a canonical PNr-#### employee identifier remains visible
 
-Expected: The central v0.23 Documents registry remains active, PNr-#### is preserved, and the dashboard UI patch introduces no mobile regression.
+Expected: The Menu button exits the internal overlay into the main navigation, central Documents remains active, and employee identifiers are unchanged.
