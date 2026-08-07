@@ -46,7 +46,7 @@
 24. One selected training must produce exactly one physical A4 confirmation page, verified by generating and counting pages in an actual PDF.
 25. A signed confirmation page must contain completion date, supervisor name, supervisor personnel number, employee signature and supervisor signature, and must not contain operational `Fällig` or `Status` fields.
 26. Every training category in an employee profile must start collapsed regardless of critical, due-soon or valid status.
-27. The employee menu must first display the four broad organizational groups `Produktion`, `Logistik`, `Instandhaltung` and `Qualitätskontrolle`. Each broad group must start collapsed. Its assigned `Tätigkeit` groups must also start collapsed and must be derived from actual employee data.
+27. The employee menu must first display the five broad organizational groups `Produktion`, `Reinigung`, `Logistik`, `Instandhaltung` and `Qualitätskontrolle`. Each broad group must start collapsed. Its assigned `Tätigkeit` groups must also start collapsed and must be derived from actual employee data.
 28. Very similar job titles must be consolidated into one understandable role; for example, `Elektriker` and `Elektroniker` must not appear as separate job groups.
 29. One user interaction domain may have only one active implementation module. Layered override modules for the same employee, category, selection, navigation or print behavior are prohibited.
 30. Confirmation-page layout must use compact normal document flow. Fixed physical page heights, flexible spacer rows and bottom-pushing signature layouts are prohibited.
@@ -62,6 +62,11 @@
 40. Employee names and personnel numbers must be visually separated; a personnel number must never be concatenated directly to the employee name.
 41. Every training must have one stable unique identifier in the `ST-UW-NNN` format. Editing the title, version, language content or assignment must not change that identifier, and duplicating or creating a training must allocate a new identifier.
 42. The stable training identifier must be visible in the catalog, training editor, employee profile, saved records, complete printed training and every confirmation/Bestätigung page. A visible print preview must allow this identifier to be verified before system printing.
+43. `Reinigung` is a first-class organizational area and must not be nested under `Produktion`. It must expose actual cleaning Tätigkeit groups derived from employee data, including hygiene/cleaning, production cleaning and building/social-area cleaning.
+44. The 10 critical, 20 due-soon and 70 valid demonstration employees must be distributed across every organizational area. No area may be left without at least one critical and one due-soon employee.
+45. The system print subtree must be a fresh, non-fixed, non-scrollable direct child of `body`; the on-screen preview overlay must never be reused as the system print root.
+46. The prepared system print root must contain exactly one independent print document per selected training. Its document count must be checked for 1, 2 and 5 selected trainings in confirmation-only and full-training modes.
+47. A release that changes printing cannot be accepted solely from an in-app preview. It requires Chromium PDF validation plus final iPhone/Safari system print-preview acceptance when available.
 
 ## Mandatory error-learning protocol
 
