@@ -51,3 +51,16 @@ Steps:
 3. Tap the same category header again and verify its training cards disappear completely and the header returns to collapsed state
 
 Expected: On the mobile viewport, a closed catalog category has no visible training cards; opening shows the grid and closing hides it again, with aria-expanded, hidden and display state synchronized.
+
+## Test 5 - Canonical group-training workflow ownership
+Viewport: mobile
+Covers: canonical group-training.js selection state, eligible employee picker, critical/soon bulk selection, language sorting, dedicated confirmation metadata step, independent per-training preview documents
+Description: Verifies the complete group-training workflow remains functional after removing the legacy v0.18 runtime owner.
+
+Steps:
+1. Open Unterweisungen, expand categories as needed, select two trainings for Gruppenunterweisung and verify the selection bar shows two selected trainings; choose Mitarbeitende zuweisen
+2. Verify only eligible Mitarbeitende are offered; use Alle Kritischen and Alle in 6–30 Tagen Fälligen, then switch Sortierung to Sprache and verify visible language headings group employees
+3. Continue with Schulungsbestätigung vorbereiten and verify a dedicated metadata step shows Durchgeführt am, supervisor name and supervisor PNr.; enter a supervisor name and PNr.
+4. Open Druckvorschau and verify there is one independent confirmation document per selected training, and every participant table has exactly Mitarbeitende Person, PNr., Tätigkeit and Unterschrift columns
+
+Expected: The group workflow completes through the canonical group-training.js owner without legacy v0.18 DOM injection; selection, eligibility, status bulk controls, language grouping, metadata and per-training confirmation preview remain usable on mobile.
