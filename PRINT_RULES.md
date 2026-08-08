@@ -37,6 +37,11 @@ If this file conflicts with an older SafeTrack print rule, this file takes prece
 25. Print footer must show the current SafeTrack product version. For the current branch this is `SafeTrack v0.24`.
 26. ST-DOC/STPG identity and backend routing must never be altered only for visual convenience.
 27. QR quiet zone, OCR-readable metadata, page identity and expected PNr. mapping take precedence over decorative layout.
+28. The group system-print root must be a fresh direct child of `body`, use normal document flow, and be fully laid out before the native system print call. A last-moment `display:none` → `display:block` transition immediately before `window.print()` is prohibited for iPhone/Safari.
+29. Group printing may have only one active print-execution controller. Legacy modules may provide compatible data preparation, but must not independently wrap or execute the group native print lifecycle.
+30. A stable v0.24 print-state marker must remain valid throughout the complete WebKit print lifecycle. The printed DOM must not depend solely on a body class that a legacy `afterprint` handler may remove.
+31. `afterprint` must never immediately hide, remove or invalidate the group system-print root. Cleanup may occur only after the print root itself is removed/closed or after a separately verified safe return-to-screen lifecycle.
+32. Immediately before native group printing, SafeTrack must run a print preflight that blocks printing if the system-print root is not a direct body child, has zero layout size, contains a logical page without QR/STPG, lacks ST-DOC identity, or lacks `Seite x/y`.
 
 ## Mandatory validation for every print-layout change
 
@@ -58,6 +63,8 @@ A print-related release is not accepted until the following are checked:
 14. ST-DOC/STPG/backend page mapping remains consistent.
 15. Group participant table retains exactly four columns and one participant row per listed employee.
 16. Individual confirmation keeps supervisor signature directly associated with supervisor identity and employee signature clearly separate.
+17. For group print, the preflight must confirm all logical pages have non-zero layout size before the native print call.
+18. The v0.24 print-state marker must remain effective even if a legacy `afterprint` callback removes an older body print class.
 
 ## iPhone acceptance rule
 
