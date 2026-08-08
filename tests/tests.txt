@@ -1,37 +1,41 @@
 # Tests
 
-## Test 1 - v0.24 Documents page and employee hierarchy [sanity]
-Viewport: desktop
-Covers: full-page Documents workspace, upload control, employee hierarchy depth, fixed PNr alignment, v0.24 version
-Description: Quickly verifies the primary v0.24 navigation and hierarchy changes.
-
-Steps:
-1. Open Mitarbeitende, expand Produktion and one Tätigkeit; verify the main group is darker, the Tätigkeit is lighter, employee rows are white, and PNr-#### values align in one column
-2. Open Menü and choose Dokumente; verify Dokumente is shown inside the normal main content area, not as a modal, and Dokumente hochladen plus Erwartete Rückläufe are visible
-3. Open Menü and verify SafeTrack v0.24 is visible
-
-Expected: Documents is a normal app page and the employee hierarchy/PNr layout is clearly structured.
-
-## Test 2 - Leader compares original and uploaded page before manual approval
-Viewport: desktop
-Covers: page-specific original snapshot, uploaded return viewing before approval, upload/OCR review, GET page review endpoint, side-by-side comparison, manual-confirm guardrail
-Description: Verifies uncertain OCR pages remain viewable and have a real visual control step before approval.
-
-Steps:
-1. Open Dokumente and click QA Vergleich vorbereiten; after QA Ergebnis shows Vergleich: ST-DOC-..., open that ST-DOC
-2. Verify Prüfen & abschließen is disabled; open Hochgeladenen Rücklauf öffnen and verify the already received page is visible even though it is not yet approved, then close the return viewer
-3. Open Vergleich öffnen; verify Digitales Original and Hochgeladener Rücklauf are both visible together with the comparison indicators, then click Seite nach Vergleich bestätigen
-
-Expected: A received page is always viewable from Documents, while manual approval requires an original-versus-scan comparison.
-
-## Test 3 - Employee signed-document view filters by PNr on mobile
+## Test 1 - Unified confirmation print layout remains isolated in QA [sanity]
 Viewport: mobile
-Covers: multi-page completion, PNr page filtering, signed page URLs, employee profile document link, Alle Seiten anzeigen, mobile overflow prevention
-Description: Verifies the employee profile initially opens only the page relevant to that employee.
+Covers: Mitarbeitende confirmation layout, supervisor PNr/signature ordering, canonical employees.js print-preview base DOM, Unterweisungen group print pagination, per-page QR/STPG identity, stable print preparation/preflight, QA preview isolation from persistent ST-DOC creation
+Description: Fast print-preview regression without opening the native iPhone system print dialog; native iPhone rendering remains a physical-device acceptance check.
 
 Steps:
-1. Open Dokumente and click QA Mitarbeiteransicht vorbereiten; note the employee name, PNr and ST-DOC shown in QA Ergebnis
-2. Open Mitarbeitende, search the displayed PNr, open the employee, verify Dokumentierte Abschlüsse contains that ST-DOC, and click Dokument öffnen
-3. Verify only the employee-relevant page is initially shown and Alle Seiten anzeigen is available; click it and verify all 3 pages appear without horizontal page overflow
+1. From Mitarbeitende, open one employee profile, select one training and open the confirmation print preview; verify `Schulungsbestätigung` is visible, supervisor PNr is populated when entered, supervisor signature is on the left and employee signature is on the right in the same row, with both signature areas remaining full usable size
+2. From Unterweisungen, expand one catalog category, select one training and at least 21 eligible Mitarbeitende, enter date plus supervisor name and PNr, and open Schulungsbestätigung – Druckvorschau
+3. Verify SafeTrack creates at least three logical preview pages, each page has its own QR and Seite x/y, and the participant table has exactly Mitarbeitende Person, PNr., Tätigkeit and Unterschrift columns
+4. Return to Dokumente and verify the QA-only employee preview did not create a persistent real ST-DOC entry
 
-Expected: Employee view defaults to the employee's signed page while the complete signed document remains available on demand.
+Expected: Individual and group confirmations keep the SafeTrack print identity pattern; the individual preview is generated from the canonical employees.js workflow and remains compatible with the v0.24 document/QR preparation; automated preview QA does not pollute the persistent document register. Native iPhone page rendering remains a physical-device acceptance check.
+
+## Test 2 - Dokumente permanent-delete guardrail and navigation
+Viewport: mobile
+Covers: Dokumente Menu+Zurück top navigation, multi-select hard-delete mode, destructive confirmation guardrail; the destructive backend deletion itself is intentionally not executed by automated QA
+Description: Verifies the permanent-delete control cannot be triggered accidentally and is clearly marked as a future Super Admin function.
+
+Steps:
+1. Open Dokumente and verify both Menü and Zurück are available in the top navigation
+2. Tap `Dokumente endgültig löschen`
+3. Verify a warning explains that deletion is irreversible and that the function is intended for Super Admin in the future
+4. With no document selected, verify the permanent-delete action is disabled; cancel deletion mode
+
+Expected: Dokumente navigation remains usable and permanent deletion requires explicit selection plus a separate irreversible-action confirmation flow.
+
+## Test 3 - Canonical Mitarbeitende and Unterweisungskatalog ownership
+Viewport: desktop
+Covers: canonical employees.js hierarchy, Bereich → Tätigkeit → Mitarbeitende order, name/PNr live search, collapsed employee training categories, canonical trainings.js catalog, collapsed catalog categories, integrated group-training selectors, removal of legacy v0.17 runtime ownership
+Description: Verifies the two Phase-2 domains render directly from their canonical modules without post-render hierarchy or catalog-fold overrides.
+
+Steps:
+1. Open Mitarbeitende and verify the broad organizational groups are shown first and are collapsed; expand one Bereich and one Tätigkeit and verify employee name and PNr. are visually separate
+2. Search for `PNr-2001` and verify the matching Bereich and Tätigkeit open automatically and only matching hierarchy content remains; clear the search
+3. Open that employee and verify all training categories start collapsed; expand one category and verify its trainings are sorted with worse status before better status
+4. Open Unterweisungen and verify all catalog categories start collapsed; expand one category, verify its trainings appear, and select one `Für Gruppenunterweisung auswählen` checkbox
+5. Verify the group-training selection bar updates to one selected training and `Mitarbeitende zuweisen` becomes enabled
+
+Expected: Mitarbeitende and Unterweisungskatalog behave identically from the user perspective but are rendered by the canonical Phase-2 modules; hierarchy/search/collapsed states work without legacy v0.17 or v0.24 catalog post-render ownership.
