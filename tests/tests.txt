@@ -39,3 +39,15 @@ Steps:
 5. Verify the group-training selection bar updates to one selected training and `Mitarbeitende zuweisen` becomes enabled
 
 Expected: Mitarbeitende and Unterweisungskatalog behave identically from the user perspective but are rendered by the canonical Phase-2 modules; hierarchy/search/collapsed states work without legacy v0.17 or v0.24 catalog post-render ownership.
+
+## Test 4 - Unterweisungskatalog collapse remains real on mobile
+Viewport: mobile
+Covers: canonical trainings.js category collapse, legacy `.training-grid { display:grid }` conflict guardrail, aria-expanded/hidden/display synchronization
+Description: Verifies catalog categories are visually closed by default and can be opened and closed again even while the historical base stylesheet still defines `.training-grid` as a grid.
+
+Steps:
+1. Open Unterweisungen and verify the first category header is visible but its training cards are not visible
+2. Tap the first category header and verify its training cards become visible and the header is expanded
+3. Tap the same category header again and verify its training cards disappear completely and the header returns to collapsed state
+
+Expected: On the mobile viewport, a closed catalog category has no visible training cards; opening shows the grid and closing hides it again, with aria-expanded, hidden and display state synchronized.
