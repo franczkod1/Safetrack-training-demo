@@ -2,7 +2,7 @@
 
 ## Test 1 - Unified confirmation print layout remains isolated in QA [sanity]
 Viewport: mobile
-Covers: Mitarbeitende confirmation layout, supervisor PNr/signature ordering, canonical employees.js print-preview base DOM, Unterweisungen group print pagination, per-page QR/STPG identity, stable print preparation/preflight, QA preview isolation from persistent ST-DOC creation
+Covers: canonical print.js ownership, Mitarbeitende confirmation layout, supervisor PNr/signature ordering, Unterweisungen 10-person logical pagination, per-page QR/STPG identity, print preflight, QA preview isolation from persistent ST-DOC creation
 Description: Fast print-preview regression without opening the native iPhone system print dialog; native iPhone rendering remains a physical-device acceptance check.
 
 Steps:
@@ -11,12 +11,12 @@ Steps:
 3. Verify SafeTrack creates at least three logical preview pages, each page has its own QR and Seite x/y, and the participant table has exactly Mitarbeitende Person, PNr., Tätigkeit and Unterschrift columns
 4. Return to Dokumente and verify the QA-only employee preview did not create a persistent real ST-DOC entry
 
-Expected: Individual and group confirmations keep the SafeTrack print identity pattern; the individual preview is generated from the canonical employees.js workflow and remains compatible with the v0.24 document/QR preparation; automated preview QA does not pollute the persistent document register. Native iPhone page rendering remains a physical-device acceptance check.
+Expected: Individual and group confirmations keep the SafeTrack print identity pattern through the single canonical print.js subsystem; no legacy print controller is required for preview preparation, pagination, QR/STPG identity or preflight. Automated preview QA does not pollute the persistent document register. Native iPhone page rendering remains a physical-device acceptance check.
 
 ## Test 2 - Dokumente permanent-delete guardrail and navigation
 Viewport: mobile
 Covers: Dokumente Menu+Zurück top navigation, multi-select hard-delete mode, destructive confirmation guardrail; the destructive backend deletion itself is intentionally not executed by automated QA
-Description: Verifies the permanent-delete control cannot be triggered accidentally and is clearly marked as a future Super Admin function.
+Description: Verifies the permanent-delete control cannot trigger accidentally and is clearly marked as a future Super Admin function.
 
 Steps:
 1. Open Dokumente and verify both Menü and Zurück are available in the top navigation
