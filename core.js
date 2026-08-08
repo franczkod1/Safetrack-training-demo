@@ -4,7 +4,7 @@ if(!S)return;
 const PRODUCT_VERSION='SafeTrack v0.24';
 const L=S.langs,K='safetrack-static-v6';
 const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)],cp=x=>structuredClone(x);
-const E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let z;try{z=JSON.parse(localStorage.getItem(K)||'null')}catch{}
 let C=z?.catalog||cp(S.trainings),R=z?.records||[];
 let U={page:'dashboard',lang:'de',menu:0,emp:'',empSearch:'',f:{s:'',c:'',r:'',a:'active'},m:null},H=[];
