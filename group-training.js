@@ -3,7 +3,7 @@ const seed=window.SafeTrackSeed,api=window.__SafeTrack,employeeApi=window.__Safe
 if(!seed||!api||!employeeApi)return;
 const LANG={de:'Deutsch',pl:'Polski',ru:'Русский',ar:'العربية',tr:'Türkçe',hu:'Magyar',ro:'Română'};
 const RANK={critical:0,soon:1,valid:2},LABEL={critical:'Kritisch',soon:'In 6–30 Tagen fällig',valid:'Gültig'};
-const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const today=()=>new Date().toISOString().slice(0,10);
 const productVersion=()=>api.productVersion||api.version||'SafeTrack v0.24';
