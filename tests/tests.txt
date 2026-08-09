@@ -2,13 +2,13 @@
 
 ## Test 1 - Unified confirmation print layout remains isolated in QA [sanity]
 Viewport: mobile
-Covers: canonical print.js ownership, preview-time print readiness, synchronous user-activated Drucken handoff, visibly gated Drucken state, Mitarbeitende confirmation layout, supervisor PNr/signature ordering, Unterweisungen 10-person logical pagination, per-page QR/STPG identity, print preflight, QA preview isolation from persistent ST-DOC creation; single-file canonical snapshot storage is intentionally not persisted in QA
+Covers: canonical print.js ownership, preview-time print readiness, synchronous user-activated Drucken handoff, visibly gated Drucken state, Mitarbeitende confirmation layout, supervisor PNr/signature ordering, Unterweisungen 15-person logical pagination, per-page QR/STPG identity, print preflight, QA preview isolation from persistent ST-DOC creation; single-file canonical snapshot storage is intentionally not persisted in QA
 Description: Fast print-preview regression without opening the native iPhone system print dialog; native iPhone rendering remains a physical-device acceptance check.
 
 Steps:
 1. From Mitarbeitende, open one employee profile, select one training and open the confirmation print preview; verify `Schulungsbestätigung` is visible, supervisor PNr is populated when entered, supervisor signature is on the left and employee signature is on the right in the same row, with both signature areas remaining full usable size
-2. From Unterweisungen, expand one catalog category, select one training and at least 21 eligible Mitarbeitende, enter date plus supervisor name and PNr, and open Schulungsbestätigung – Druckvorschau
-3. Verify SafeTrack creates at least three logical preview pages, each page has its own QR and Seite x/y, the participant table has exactly Mitarbeitende Person, PNr., Tätigkeit and Unterschrift columns, and Drucken becomes enabled only when the preview visibly reports that it is druckbereit with no further server request required
+2. From Unterweisungen, expand one catalog category, select one training and at least 31 eligible Mitarbeitende, enter date plus supervisor name and PNr, and open Schulungsbestätigung – Druckvorschau
+3. Verify SafeTrack creates at least three logical preview pages, no logical page contains more than 15 Mitarbeitende, each page has its own QR and Seite x/y, the participant table has exactly Mitarbeitende Person, PNr., Tätigkeit and Unterschrift columns, and Drucken becomes enabled only when the preview visibly reports that it is druckbereit with no further server request required
 4. Return to Dokumente and verify the QA-only employee preview did not create a persistent real ST-DOC entry
 
 Expected: Individual and group confirmations are fully prepared before Drucken becomes visibly active; the final Drucken interaction requires no document/snapshot API work and hands off directly to the native print call through the single canonical print.js subsystem. Persistent canonical snapshot storage is excluded from QA mode to avoid document pollution. Native iPhone page rendering remains a physical-device acceptance check.
