@@ -26,7 +26,7 @@ If this file conflicts with an older SafeTrack print rule, this file takes prece
 14. Individual confirmation field order must be unambiguous: Durchgeführt am; supervisor PNr.; supervisor name; supervisor signature; employee signature.
 15. Group Schulungsbestätigung participant columns are exactly: `Mitarbeitende Person`, `PNr.`, `Tätigkeit`, `Unterschrift`. There is no per-employee `Datum` column.
 16. Group documents must contain a separate supervisor block with supervisor name, supervisor PNr. and supervisor signature.
-17. SafeTrack, not the browser, must decide group pagination. Large participant sets must be split into explicit logical SafeTrack pages before system print.
+17. SafeTrack, not the browser, must decide group pagination. For the current SafeTrack v0.24 group confirmation layout, the canonical target is **15 Mitarbeitende per logical A4 page**. Larger participant sets must be split into explicit logical SafeTrack pages before system print. The 15-person target must never be achieved by reducing the 40 mm QR or the minimum 8 mm employee signature area.
 18. Each explicit group page must repeat the full QR/meta identity header and show the correct `Seite x/y`.
 19. Never apply `break-inside: avoid` / `page-break-inside: avoid` to an entire A4 logical page container on iPhone/Safari. This can cause WebKit to generate blank pages.
 20. Page-break rules must be deterministic: explicit break between logical pages; no extra break after the final logical page.
@@ -41,7 +41,7 @@ If this file conflicts with an older SafeTrack print rule, this file takes prece
 29. Group printing may have only one active print-execution controller. Legacy modules may provide compatible data preparation, but must not independently wrap or execute the group native print lifecycle.
 30. A stable v0.24 print-state marker must remain valid throughout the complete WebKit print lifecycle. The printed DOM must not depend solely on a body class that a legacy `afterprint` handler may remove.
 31. `afterprint` must never immediately hide, remove or invalidate the group system-print root. Cleanup may occur only after the print root itself is removed/closed or after a separately verified safe return-to-screen lifecycle.
-32. Immediately before native group printing, SafeTrack must run a print preflight that blocks printing if the system-print root is not a direct body child, has zero layout size, contains a logical page without QR/STPG, lacks ST-DOC identity, or lacks `Seite x/y`.
+32. Immediately before native group printing, SafeTrack must run a print preflight that blocks printing if the system-print root is not a direct body child, has zero layout size, contains a logical page without QR/STPG, lacks ST-DOC identity, lacks `Seite x/y`, or contains more than 15 participant rows.
 
 ## Mandatory validation for every print-layout change
 
@@ -62,9 +62,10 @@ A print-related release is not accepted until the following are checked:
 13. SafeTrack version in footer is current.
 14. ST-DOC/STPG/backend page mapping remains consistent.
 15. Group participant table retains exactly four columns and one participant row per listed employee.
-16. Individual confirmation keeps supervisor signature directly associated with supervisor identity and employee signature clearly separate.
-17. For group print, the preflight must confirm all logical pages have non-zero layout size before the native print call.
-18. The v0.24 print-state marker must remain effective even if a legacy `afterprint` callback removes an older body print class.
+16. For the current v0.24 group layout, a logical page contains no more than 15 participant rows, and a full 15-row page still preserves the minimum 8 mm signature area and 40 mm QR.
+17. Individual confirmation keeps supervisor signature directly associated with supervisor identity and employee signature clearly separate.
+18. For group print, the preflight must confirm all logical pages have non-zero layout size before the native print call.
+19. The v0.24 print-state marker must remain effective even if a legacy `afterprint` callback removes an older body print class.
 
 ## iPhone acceptance rule
 
