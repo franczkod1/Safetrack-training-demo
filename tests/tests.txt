@@ -1,66 +1,64 @@
 # Tests
 
-## Test 1 - Unified confirmation print layout remains isolated in QA [sanity]
+## Test 1 - Dokumente category hierarchy, search and status filter [sanity]
 Viewport: mobile
-Covers: canonical print.js ownership, preview-time print readiness, synchronous user-activated Drucken handoff, visibly gated Drucken state, Mitarbeitende confirmation layout, supervisor PNr/signature ordering, Unterweisungen 15-person logical pagination, per-page QR/STPG identity, print preflight, QA preview isolation from persistent ST-DOC creation; single-file canonical snapshot storage is intentionally not persisted in QA
-Description: Fast print-preview regression without opening the native iPhone system print dialog; native iPhone rendering remains a physical-device acceptance check.
+Covers: automatic central document list, document-backed category → training → ST-DOC hierarchy, collapsed categories and training submenus, visually distinct hierarchy backgrounds, aggregated parent status chips with counts, blue Rückupload status, employee PNr/name search, ST-DOC search, training name/ID/date search, status filtering, urgency-first ordering, no-results state, responsive controls
+Description: Fast verification of the changed Dokumente browsing model.
 
 Steps:
-1. From Mitarbeitende, open one employee profile, select one training and open the confirmation print preview; verify `Schulungsbestätigung` is visible, supervisor PNr is populated when entered, supervisor signature is on the left and employee signature is on the right in the same row, with both signature areas remaining full usable size
-2. From Unterweisungen, expand one catalog category, select one training and at least 31 eligible Mitarbeitende, enter date plus supervisor name and PNr, and open Schulungsbestätigung – Druckvorschau
-3. Verify SafeTrack creates at least three logical preview pages, no logical page contains more than 15 Mitarbeitende, each page has its own QR and Seite x/y, the participant table has exactly Mitarbeitende Person, PNr., Tätigkeit and Unterschrift columns, and Drucken becomes enabled only when the preview visibly reports that it is druckbereit with no further server request required
-4. Return to Dokumente and verify the QA-only employee preview did not create a persistent real ST-DOC entry
+1. Open Dokumente; verify Suchen and Status are visible, there is no Alle Unterweisungen dropdown, only categories backed by actual documents are shown, every category body is visually collapsed, and the right-side category chevron is a clean downward chevron
+2. Expand the first category and verify its chevron rotates upward; verify category, training and ST-DOC layers have visibly distinct backgrounds; verify only trainings with documents are shown and every training starts collapsed with a clean downward chevron and no ST-DOC card visible; when mixed statuses exist, verify category and training headers show every contained status as separate counted chips in urgency order, with Rückupload ausstehend blue; expand the first training and verify its chevron rotates upward and its ST-DOC cards appear, then collapse it and verify those cards disappear completely; finally collapse the category and verify its body disappears
+3. Open one document, note its ST-DOC ID and one participant PNr., return to the list and verify searches by PNr. and distinctive ST-DOC fragment find it; also verify a training-name/ID or date query works, then select the document's status and confirm the visible hierarchy recalculates without empty categories/trainings and parent status-chip counts reflect only the filtered documents
+4. Enter zzzz-no-document-match and verify Keine Dokumente gefunden. appears; press Filter löschen and verify the hierarchy returns
 
-Expected: Individual and group confirmations are fully prepared before Drucken becomes visibly active; the final Drucken interaction requires no document/snapshot API work and hands off directly to the native print call through the single canonical print.js subsystem. Persistent canonical snapshot storage is excluded from QA mode to avoid document pollution. Native iPhone page rendering remains a physical-device acceptance check.
+Expected: Dokumente uses a compact two-level collapsed category → training hierarchy derived only from real documents; hierarchy layers are visually distinct, category/training headers show all present status buckets with correct counts in urgency order, Rückupload ausstehend is blue, ST-DOC cards appear only after opening a training, search and Status filtering recalculate summaries correctly, empty parents disappear automatically, and the layout remains usable without horizontal overflow.
 
-## Test 2 - Dokumente permanent-delete guardrail and navigation
+## Test 2 - Individual print preparation remains ready in browser QA
 Viewport: mobile
-Covers: Dokumente Menu+Zurück top navigation, multi-select hard-delete mode, destructive confirmation guardrail; the destructive backend deletion itself is intentionally not executed by automated QA
-Description: Verifies the permanent-delete control cannot trigger accidentally and is clearly marked as a future Super Admin function.
+Covers: canonical print.js ownership, individual confirmation preview readiness, ST-DOC/STPG decoration, QR presence, enabled print preparation, QA-safe return to employee workflow
+Description: Verifies the browser-observable individual confirmation preparation before native print handoff. Signature-field rendering in the physical printed output remains a manual acceptance item tracked by HAN-19.
 
 Steps:
-1. Open Dokumente and verify both Menü and Zurück are available in the top navigation
-2. Tap `Dokumente endgültig löschen`
-3. Verify a warning explains that deletion is irreversible and that the function is intended for Super Admin in the future
-4. With no document selected, verify the permanent-delete action is disabled; cancel deletion mode
+1. From Mitarbeitende, open one employee profile, select one training and open the confirmation preview
+2. Verify Schulungsbestätigung, ST-DOC-style identity and page QR are present, and Drucken becomes enabled only after the preview reports it is ready
+3. Close the preview without invoking native printing and verify the employee workflow remains usable
 
-Expected: Dokumente navigation remains usable and permanent deletion requires explicit selection plus a separate irreversible-action confirmation flow.
+Expected: Browser-observable individual print preparation is deterministic and ready before native handoff, and returning from preview keeps the employee workflow usable. Physical printed signature fields remain a separate manual acceptance item tracked by HAN-19; native iPhone post-print decisions and retry identity remain tracked in HAN-21.
 
 ## Test 3 - Canonical Mitarbeitende and Unterweisungskatalog ownership
 Viewport: desktop
-Covers: canonical employees.js hierarchy, Bereich → Tätigkeit → Mitarbeitende order, name/PNr live search, collapsed employee training categories, canonical trainings.js catalog, collapsed catalog categories, integrated group-training selectors, removal of legacy v0.17 runtime ownership
-Description: Verifies the two Phase-2 domains render directly from their canonical modules without post-render hierarchy or catalog-fold overrides.
+Covers: canonical employees.js hierarchy, Bereich → Tätigkeit → Mitarbeitende order, sidebar navigation spacing, hierarchy outer spacing, desktop PNr/status vertical alignment, name/PNr live search, collapsed employee training categories, canonical trainings.js catalog, collapsed catalog categories, integrated group-training selectors
+Description: Verifies the existing employee and training domains remain unchanged by HAN-21.
 
 Steps:
-1. Open Mitarbeitende and verify the broad organizational groups are shown first and are collapsed; expand one Bereich and one Tätigkeit and verify employee name and PNr. are visually separate
-2. Search for `PNr-2001` and verify the matching Bereich and Tätigkeit open automatically and only matching hierarchy content remains; clear the search
-3. Open that employee and verify all training categories start collapsed; expand one category and verify its trainings are sorted with worse status before better status
-4. Open Unterweisungen and verify all catalog categories start collapsed; expand one category, verify its trainings appear, and select one `Für Gruppenunterweisung auswählen` checkbox
-5. Verify the group-training selection bar updates to one selected training and `Mitarbeitende zuweisen` becomes enabled
+1. Open Mitarbeitende and verify the Bereich hierarchy has the established left/right/bottom outer spacing, broad groups start collapsed, and expanded status/PNr columns remain vertically aligned
+2. Search for PNr-2001 and verify the matching hierarchy opens automatically; clear the search, open the employee and verify training categories start collapsed
+3. Open Unterweisungen and verify catalog categories start collapsed; expand one category, select one training for Gruppenunterweisung and verify the selection bar updates
 
-Expected: Mitarbeitende and Unterweisungskatalog behave identically from the user perspective but are rendered by the canonical Phase-2 modules; hierarchy/search/collapsed states work without legacy v0.17 or v0.24 catalog post-render ownership.
+Expected: Existing Mitarbeitende and Unterweisungen behavior remains stable after the Dokumente/print workflow update.
 
-## Test 4 - Unterweisungskatalog collapse remains real on mobile
+## Test 4 - Comparison snapshot rendering, result indicators and orientation regression
 Viewport: mobile
-Covers: canonical trainings.js category collapse, legacy `.training-grid { display:grid }` conflict guardrail, aria-expanded/hidden/display synchronization
-Description: Verifies catalog categories are visually closed by default and can be opened and closed again even while the historical base stylesheet still defines `.training-grid` as a grid.
+Covers: standalone future original snapshot, Original ↔ Rücklauf comparison, green/red/neutral review indicators, unsigned-page uncertainty, conflict display, QR-orientation normalization and audit
+Description: Verifies a newly created document uses the new standalone A4-like snapshot and that review results clearly distinguish success, failure/uncertainty and neutral information; then rechecks the 180° orientation flow.
 
 Steps:
-1. Open Unterweisungen and verify the first category header is visible but its training cards are not visible
-2. Tap the first category header and verify its training cards become visible and the header is expanded
-3. Tap the same category header again and verify its training cards disappear completely and the header returns to collapsed state
+1. Open Dokumente and press QA Vergleich vorbereiten; wait until QA Ergebnis shows Vergleich with an ST-DOC ID, find that document, open Seitenprüfung and Vergleich öffnen
+2. Verify Digitales Original is a clean bounded A4-like page with normal typography and structured document metadata instead of oversized/unformatted browser HTML
+3. Verify successful identity checks such as QR-Seite, Dokument-ID OCR, Seite x/y, Unterweisungs-ID, Version and PNr. have green check styling; verify Unterschrift erkannt: Nicht sicher has a red error marker; verify Kein harter Konflikt is green; verify Keine automatische Erkennung is neutral rather than red
+4. Return to Dokumente, press QA 180° Ausrichtung, wait for the 180° · qr audit, open that comparison and verify the Rücklauf is upright and Ausrichtung reports 180° korrigiert · QR while the same ST-DOC/STPG identity is retained
 
-Expected: On the mobile viewport, a closed catalog category has no visible training cards; opening shows the grid and closing hides it again, with aria-expanded, hidden and display state synchronized.
+Expected: New original snapshots render as readable standalone A4-like documents, review checks use correct green/red/neutral visual semantics, and the existing QR-based 180° normalization still keeps the original document/page identity.
 
-## Test 5 - Canonical group-training workflow ownership
+## Test 5 - Unterweisungen mobile cards and compact selection bar
 Viewport: mobile
-Covers: canonical group-training.js selection state, eligible employee picker, critical/soon bulk selection, language sorting, dedicated confirmation metadata step, independent per-training preview documents
-Description: Verifies the complete group-training workflow remains functional after removing the legacy v0.18 runtime owner.
+Covers: Unterweisungen category count/chevron alignment, expanded training-card responsive layout, horizontal-overflow prevention, compact group-training selection bar, group-training selection controls
+Description: Verifies the expanded training cards fit a narrow iPhone viewport and the floating training-selection bar remains fully usable while consuming materially less vertical space.
 
 Steps:
-1. Open Unterweisungen, expand categories as needed, select two trainings for Gruppenunterweisung and verify the selection bar shows two selected trainings; choose Mitarbeitende zuweisen
-2. Verify only eligible Mitarbeitende are offered; use Alle Kritischen and Alle in 6–30 Tagen Fälligen, then switch Sortierung to Sprache and verify visible language headings group employees
-3. Continue with Schulungsbestätigung vorbereiten and verify a dedicated metadata step shows Durchgeführt am, supervisor name and supervisor PNr.; enter a supervisor name and PNr.
-4. Open Druckvorschau and verify there is one independent confirmation document per selected training, and every participant table has exactly Mitarbeitende Person, PNr., Tätigkeit and Unterschrift columns
+1. Open Unterweisungen; verify the blue category count badges and chevrons remain vertically aligned and there is no horizontal page overflow
+2. Expand a category and verify each visible training card stays fully inside the viewport: the group-training checkbox is on its own row, title/description wrap normally, metadata/actions remain inside the card, and no horizontal scrollbar appears
+3. Select exactly two trainings and verify the floating bar shows 2 Unterweisung(en) ausgewählt, keeps both Auswahl aufheben and Mitarbeitende zuweisen visible, hides the secondary explanatory sentence on mobile, and is compact enough that it does not cover an excessive part of the viewport
+4. Clear the training selection, collapse the category and verify the category alignment remains unchanged and no horizontal overflow appears
 
-Expected: The group workflow completes through the canonical group-training.js owner without legacy v0.18 DOM injection; selection, eligibility, status bulk controls, language grouping, metadata and per-training confirmation preview remain usable on mobile.
+Expected: Expanded Unterweisungen cards never force horizontal scrolling on mobile, content wraps within the viewport, the floating selection bar is materially shorter while preserving both actions and the selection count, and the previous category count/chevron alignment remains intact.
