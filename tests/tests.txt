@@ -27,19 +27,21 @@ Expected: Browser-observable individual print preparation is deterministic and r
 
 ## Test 3 - Canonical Mitarbeitende and Unterweisungskatalog ownership
 Viewport: desktop
-Covers: canonical employees.js hierarchy, Bereich → Tätigkeit → Mitarbeitende order, sidebar navigation spacing, hierarchy outer spacing, desktop PNr/status vertical alignment, name/PNr live search, collapsed employee training categories, canonical trainings.js catalog, collapsed catalog categories, integrated group-training selectors
+Covers: canonical employees.js hierarchy, Bereich → Tätigkeit → Mitarbeitende order, sidebar navigation spacing, hierarchy outer spacing, desktop PNr/status vertical alignment, name/PNr live search, collapsed employee training categories, canonical trainings.js catalog, collapsed catalog categories, integrated group-training selectors, 15-participant group-print pagination stability, larger writable row area, single-A4 logical-page containment, anchored SafeTrack footer, enlarged desktop return-page comparison
 Description: Verifies the existing employee and training domains remain unchanged by HAN-21.
 
 Steps:
 1. Open Mitarbeitende and verify the Bereich hierarchy has the established left/right/bottom outer spacing, broad groups start collapsed, and expanded status/PNr columns remain vertically aligned
 2. Search for PNr-2001 and verify the matching hierarchy opens automatically; clear the search, open the employee and verify training categories start collapsed
 3. Open Unterweisungen and verify catalog categories start collapsed; expand one category, select one training for Gruppenunterweisung and verify the selection bar updates
+4. Continue the group-training flow with enough employees to produce a full group confirmation page; verify the first full page still contains exactly 15 participant rows, each writable row is visibly taller than before, the SafeTrack footer stays inside the same logical page, and the participant count is not reduced. Native print-preview logical-page-count = physical-page-count remains a manual acceptance check because the system print dialog is outside browser QA; perform it with browser-native print headers/footers left enabled.
+5. Open Dokumente, prepare/open a comparison with a returned page, and verify on desktop that Hochgeladener Rücklauf receives visibly more width than Digitales Original and a taller preview while the full portrait page remains contained without cropping
 
-Expected: Existing Mitarbeitende and Unterweisungen behavior remains stable after the Dokumente/print workflow update.
+Expected: Existing Mitarbeitende and Unterweisungen behavior remains stable; full group pages keep 15 participants with the larger writable row area and the SafeTrack footer contained inside each logical page instead of spilling to a footer-only sheet. Native print preview must show one physical A4 per logical SafeTrack page during manual acceptance with browser-native print headers/footers still enabled. The desktop comparison keeps the complete returned page materially larger and easier to inspect without cropping.
 
 ## Test 4 - Comparison snapshot rendering, result indicators and orientation regression
 Viewport: mobile
-Covers: standalone future original snapshot, Original ↔ Rücklauf comparison, green/red/neutral review indicators, unsigned-page uncertainty, conflict display, QR-orientation normalization and audit
+Covers: standalone future original snapshot, mobile Original ↔ Rücklauf comparison, green/red/neutral review indicators, unsigned-page uncertainty, conflict display, QR-orientation normalization and audit, mobile no-overflow regression
 Description: Verifies a newly created document uses the new standalone A4-like snapshot and that review results clearly distinguish success, failure/uncertainty and neutral information; then rechecks the 180° orientation flow.
 
 Steps:
